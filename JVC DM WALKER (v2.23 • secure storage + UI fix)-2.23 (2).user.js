@@ -9,29 +9,6 @@
 // @grant        GM.setValue
 // @grant        GM.addValueChangeListener
 // ==/UserScript==
-const {
-  sleep,
-  rnd,
-  human,
-  dwell,
-  q,
-  qa,
-  NOW,
-  HRS,
-  ORIG,
-  setVal,
-  typeHuman,
-  URL_RX_GLOBAL,
-  URL_RX_STRICT,
-  getValue,
-  setValue,
-  appendQuick,
-  typeMixed
-} = require('./utils');
-const { ensureUI } = require('./ui');
-
-const uiState = { chronoEl:null, statusEl:null, logEl:null, uiMutationObserver:null, uiRemountTimeout:null };
-
 (async function () {
   'use strict';
 
@@ -45,44 +22,101 @@ const uiState = { chronoEl:null, statusEl:null, logEl:null, uiMutationObserver:n
     catch (err) { console.error('GM.setValue:', err); }
   };
 
+  /* ---------- utils ---------- */
+  const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));
+  const rnd=(a,b)=>a+Math.random()*(b-a);
+  const human=()=>sleep(Math.round(rnd(49,105)));
+  const dwell=(a=350,b=950)=>sleep(Math.round(rnd(a,b)));
+  const q=(s,r=document)=>r.querySelector(s);
+  const qa=(s,r=document)=>Array.from(r.querySelectorAll(s));
+  const NOW=()=>Date.now(), HRS=h=>h*3600e3;
+  const ORIG=typeof location !== 'undefined' ? location.origin : '';
+
+  let chronoEl=null, statusEl=null, logEl=null;
+
   const logBuffer=[]; let logIdx=0; const log=(s)=>{
     logBuffer[logIdx++ % 200] = s;
-    if(!uiState.logEl) uiState.logEl=q('#jvc-dmwalker-log');
-    if(uiState.logEl){
+    if(!logEl) logEl=q('#jvc-dmwalker-log');
+    if(logEl){
     const idx=logIdx%200;
     const ordered=logBuffer.slice(idx).concat(logBuffer.slice(0,idx));
-    uiState.logEl.textContent=ordered.filter(Boolean).join('\n');
-    uiState.logEl.scrollTop=uiState.logEl.scrollHeight;
+    logEl.textContent=ordered.filter(Boolean).join('\n');
+    logEl.scrollTop=logEl.scrollHeight;
     }
   };
 
   // keep track of the UI MutationObserver so it can be cleaned up
+  let uiMutationObserver = null;
+  let uiRemountTimeout = null;
   if (typeof window !== 'undefined') {
     window.toggleKeyHandler = window.toggleKeyHandler || null;
       function cleanupUI(){
-       if(uiState.uiMutationObserver){
-          uiState.uiMutationObserver.disconnect();
-          uiState.uiMutationObserver = null;
+        if(uiMutationObserver){
+          uiMutationObserver.disconnect();
+          uiMutationObserver = null;
         }
         if(window.toggleKeyHandler){
           const toggleKeyHandler = window.toggleKeyHandler;
           document.removeEventListener('keydown', toggleKeyHandler);
           window.toggleKeyHandler = null;
         }
-        if (uiState.uiRemountTimeout) {
-          clearTimeout(uiState.uiRemountTimeout);
-          uiState.uiRemountTimeout = null;
+        if (uiRemountTimeout) {
+          clearTimeout(uiRemountTimeout);
+          uiRemountTimeout = null;
         }
         if (timerHandle) { clearInterval(timerHandle); timerHandle = null; }
         q('#jvc-dmwalker')?.remove();
         q('#jvc-dmwalker-badge')?.remove();
-        uiState.chronoEl=null;
-        uiState.statusEl=null;
-        uiState.logEl=null;
+        chronoEl=null;
+        statusEl=null;
+        logEl=null;
     }
     window.addEventListener('unload', cleanupUI);
   }
-  
+
+  function setVal(el,v){
+    if(!el) return;
+    const d=Object.getOwnPropertyDescriptor(Object.getPrototypeOf(el),'value');
+    d?.set ? d.set.call(el,v) : (el.value=v);
+    el.dispatchEvent(new Event('input',{bubbles:true}));
+    el.dispatchEvent(new Event('change',{bubbles:true}));
+  }
+  async function typeHuman(el, txt){
+    if(!el) return;
+    el.scrollIntoView?.({block:'center'});
+    el.focus?.();
+    for(const ch of txt){
+      const prev=(el.value??el.textContent??'');
+      if(el.isContentEditable){ el.textContent = prev + ch; }
+      else setVal(el, prev + ch);
+      el.dispatchEvent(new KeyboardEvent('keydown',{key:ch,bubbles:true}));
+      el.dispatchEvent(new KeyboardEvent('keypress',{key:ch,bubbles:true}));
+      el.dispatchEvent(new KeyboardEvent('keyup',{key:ch,bubbles:true}));
+      await human();
+    }
+    await human();
+  }
+
+  // “Paste URLs, type everything else” for message field
+  const URL_RX_GLOBAL = /(https?:\/\/\S+)/gi;
+  const URL_RX_STRICT = /^https?:\/\/\S+$/i;
+  function getValue(el){ return el?.isContentEditable ? (el.textContent||'') : (el.value||''); }
+  function setValue(el,v){ if(el.isContentEditable){ el.textContent=v; el.dispatchEvent(new Event('input',{bubbles:true})); el.dispatchEvent(new Event('change',{bubbles:true})); } else setVal(el,v); }
+  async function appendQuick(el, s){ const prev=getValue(el); setValue(el, prev + s); await sleep(20); }
+  async function typeMixed(el, text){
+    if(!el) return;
+    URL_RX_GLOBAL.lastIndex = 0;
+    const parts = text.split(URL_RX_GLOBAL);
+    for(const part of parts){
+      if(!part) continue;
+      if (URL_RX_STRICT.test(part)){
+        await appendQuick(el, part);
+      } else {
+        await typeHuman(el, part);
+      }
+    }
+  }
+
   /* ---------- human-like pre-click ---------- */
   async function humanHover(el){
     if(!el) return;
@@ -489,40 +523,17 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
     const { subject, message } = buildPersonalizedMessage(pseudo);
 
     const titre = q('#conv_titre, input[name="conv_titre"], input[placeholder*="sujet" i]');
-    if(!titre){
-      console.error('[handleCompose] Champ titre introuvable');
-      return { ok:false, pseudo, reason:'no_title' };
-    }
-    await human();
-    setVal(titre,'');
-    await typeHuman(titre, subject||'');
-    
+    if(titre){ await human(); setVal(titre,''); await typeHuman(titre, subject||''); }
+
     let zone = q('textarea[name="message"]') || q('.jv-editor [contenteditable="true"]');
     if(!zone){
       const form=q('form.js-form-post-mp')||q('form');
-      if(form && !q('textarea[name="message"]',form)){
-        const ta=document.createElement('textarea');
-        ta.name='message';
-        ta.style.display='none';
-        form.appendChild(ta);
-        zone=ta;
-      }
+      if(form && !q('textarea[name="message"]',form)){ const ta=document.createElement('textarea'); ta.name='message'; ta.style.display='none'; form.appendChild(ta); zone=ta; }
     }
-    if(!zone){
-      console.error('[handleCompose] Zone de message introuvable');
-      return { ok:false, pseudo, reason:'no_zone' };
-    }
-    await human();
-    setValue(zone,'');
-    await typeMixed(zone, message||'');
-    
+    if(zone){ await human(); setValue(zone,''); await typeMixed(zone, message||''); }
+
     await dwell(800,1400);
-    const submitBtn=q('.btn.btn-poster-msg.js-post-message, button[type="submit"]');
-    if(!submitBtn){
-      console.error('[handleCompose] Bouton d\'envoi introuvable');
-      return { ok:false, pseudo, reason:'no_submit' };
-    }
-    submitBtn.click();
+    q('.btn.btn-poster-msg.js-post-message, button[type="submit"]')?.click();
     await sleep(1200);
 
     if (isBannedError()){
@@ -532,12 +543,7 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
     // Retry if the CF token is missing or a visible error is detected.
     if ((hasCF() && !cfToken()) || hasVisibleError()) {
       await sleep(7000+Math.floor(Math.random()*6000));
-      const retryBtn=q('.btn.btn-poster-msg.js-post-message, button[type="submit"]');
-      if(!retryBtn){
-        console.error('[handleCompose] Bouton d\'envoi introuvable (retry)');
-        return { ok:false, pseudo, reason:'no_submit' };
-      }
-      retryBtn.click();
+      q('.btn.btn-poster-msg.js-post-message, button[type="submit"]')?.click();
       await sleep(1200);
       if (isBannedError()){
         return { ok:false, pseudo, reason:'banned' };
@@ -582,13 +588,13 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
         else if(s.stopTs) ms = Math.max(0,s.stopTs - s.startTs);
         else ms = NOW()-s.startTs;
       }
-      if(!uiState.chronoEl) uiState.chronoEl = q('#jvc-dmwalker-chrono');
-      if(uiState.chronoEl) uiState.chronoEl.textContent = formatHMS(ms);
-      if(!uiState.statusEl) uiState.statusEl = q('#jvc-dmwalker-status');
-      if(uiState.statusEl){
+      if(!chronoEl) chronoEl = q('#jvc-dmwalker-chrono');
+      if(chronoEl) chronoEl.textContent = formatHMS(ms);
+      if(!statusEl) statusEl = q('#jvc-dmwalker-status');
+      if(statusEl){
         const on=onCache;
-        uiState.statusEl.textContent = on?'ON':'OFF';
-        uiState.statusEl.style.color = on?'#32d296':'#bbb';
+        statusEl.textContent = on?'ON':'OFF';
+        statusEl.style.color = on?'#32d296':'#bbb';
       }
     } finally {
       updating = false;
@@ -716,27 +722,8 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
 
   /* ---------- robust compact English UI ---------- */
   (async function buildAndAutoStart(){
-    const tryUI = async () => {
-      try {
-        await ensureUI({
-          DEFAULTS,
-          loadConf,
-          saveConf,
-          myPseudo,
-          startHandler,
-          stopHandler,
-          purgeHandler,
-          sessionGet,
-          sessionStart,
-          updateSessionUI,
-          state: uiState,
-          log
-        });
-      } catch (err) {
-        console.error(err);
-        log(`[DM Walker] UI error: ${err && err.message ? err.message : err}`);
-      }
-    };    if (document.readyState === 'loading'){ document.addEventListener('DOMContentLoaded', tryUI, {once:true}); }
+    const tryUI=async()=>{ try{ await ensureUI(); }catch(e){ console.error('[DM Walker] UI error', e); } };
+    if (document.readyState === 'loading'){ document.addEventListener('DOMContentLoaded', tryUI, {once:true}); }
     else { await tryUI(); }
     let retries=0;
     let mounting = false;
@@ -755,7 +742,7 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
       }
     }, 700);    if(onCache) tickSoon(400);
   })();
-  
+
     async function startHandler(){
     const c=Object.assign({}, DEFAULTS, await loadConf());
       const pseudo = myPseudo();
@@ -783,11 +770,123 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
     await set(STORE_SENT,{});
     log('96h memory cleared.');
   }
-  
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', ensureUI);
-  } else {
-    ensureUI();
-  }
 
+  async function ensureUI(){
+    if(q('#jvc-dmwalker')) return;
+
+    const conf = Object.assign({}, DEFAULTS, await loadConf());
+    if(!conf.me){ conf.me = myPseudo(); await saveConf(conf); }
+        if(!conf.me){
+      const pseudo = myPseudo();
+      if(pseudo){
+        conf.me = pseudo;
+        await saveConf(conf);
+      }
+    }
+
+    const box=document.createElement('div');
+    box.id='jvc-dmwalker';
+    Object.assign(box.style,{
+      position:'fixed', right:'12px', bottom:'12px', width:'260px',
+      background:'#0f1115', color:'#eee', border:'1px solid #333',
+      borderRadius:'10px', padding:'8px', zIndex:2147483647,
+      boxShadow:'0 8px 24px rgba(0,0,0,.5)',
+      font:'12px/1.4 system-ui,Segoe UI,Roboto,Arial'
+    });
+    const header=document.createElement('div');
+    Object.assign(header.style,{display:'flex',alignItems:'center',gap:'8px',marginBottom:'6px'});
+    const title=document.createElement('strong');
+    title.textContent='JVC DM WALKER';
+    Object.assign(title.style,{fontSize:'12px',flex:'1'});
+    const status=document.createElement('span');
+    status.id='jvc-dmwalker-status';
+    status.textContent='OFF';
+    Object.assign(status.style,{fontWeight:'700',color:'#bbb'});
+    statusEl=status;
+    header.append(title,status);
+
+    const actions=document.createElement('div');
+    Object.assign(actions.style,{display:'flex',alignItems:'center',gap:'8px',margin:'6px 0'});
+    const startBtn=document.createElement('button');
+    startBtn.id='jvc-dmwalker-start';
+    startBtn.textContent='Start';
+    Object.assign(startBtn.style,{background:'#2a6ef5',border:'0',color:'#fff',padding:'5px 9px',borderRadius:'8px',cursor:'pointer'});
+    const stopBtn=document.createElement('button');
+    stopBtn.id='jvc-dmwalker-stop';
+    stopBtn.textContent='Stop';
+    Object.assign(stopBtn.style,{background:'#8a2020',border:'0',color:'#fff',padding:'5px 9px',borderRadius:'8px',cursor:'pointer'});
+    const purgeBtn=document.createElement('button');
+    purgeBtn.id='jvc-dmwalker-purge';
+    purgeBtn.textContent='Clear 96h';
+    Object.assign(purgeBtn.style,{background:'#333',border:'1px solid #555',color:'#bbb',padding:'5px 9px',borderRadius:'8px',cursor:'pointer'});
+    actions.append(startBtn,stopBtn,purgeBtn);
+    startBtn.addEventListener('click', startHandler);
+    stopBtn.addEventListener('click', stopHandler);
+    purgeBtn.addEventListener('click', purgeHandler);
+
+    const chronoWrap=document.createElement('div');
+    Object.assign(chronoWrap.style,{display:'flex',justifyContent:'flex-start',alignItems:'center',marginBottom:'4px',fontVariantNumeric:'tabular-nums'});
+    const chronoInner=document.createElement('div');
+    chronoInner.textContent='⏱ ';
+    const chrono=document.createElement('span');
+    chrono.id='jvc-dmwalker-chrono';
+    chrono.textContent='00:00:00';
+    chronoEl=chrono;
+    chronoInner.appendChild(chrono);
+    chronoWrap.appendChild(chronoInner);
+
+    const log=document.createElement('div');
+    log.id='jvc-dmwalker-log';
+    Object.assign(log.style,{
+      marginTop:'2px',color:'#9ecbff',lineHeight:'1.4',height:'5.6em',
+      overflow:'auto',whiteSpace:'pre-wrap',background:'#0b0d12',
+      border:'1px solid #222',borderRadius:'8px',padding:'6px'
+    });
+    logEl=log;
+
+    box.append(header,actions,chronoWrap,log);
+
+    const parent=document.body||document.documentElement;
+    parent.appendChild(box);
+
+    let b=q('#jvc-dmwalker-badge');
+    if(!b){
+      b=document.createElement('div');
+      b.id='jvc-dmwalker-badge';
+      Object.assign(b.style,{position:'fixed',top:'10px',right:'10px',background:'#2a6ef5',color:'#fff',padding:'5px 7px',borderRadius:'8px',font:'12px system-ui',zIndex:2147483647,cursor:'pointer',boxShadow:'0 6px 18px rgba(0,0,0,.35)'});
+      b.textContent='MW';
+      b.title='Toggle panel (Alt+J)';
+      (document.body||document.documentElement).appendChild(b);
+    }
+    b.onclick = ()=>{ const box=q('#jvc-dmwalker'); if(box) box.style.display = (box.style.display==='none'?'block':'none'); };
+
+    if(!window.toggleKeyHandler){
+      const toggleKeyHandler = (e)=>{
+        if(e.altKey && /j/i.test(e.key)){
+          const box=q('#jvc-dmwalker');
+          if(box) box.style.display=box.style.display==='none'?'block':'none';
+        }
+      };
+      window.toggleKeyHandler = toggleKeyHandler;
+      document.addEventListener('keydown', toggleKeyHandler);
+    }
+
+    if((await sessionGet()).active) await sessionStart();
+    else await updateSessionUI();
+
+    uiMutationObserver = new MutationObserver(()=>{
+      if(!parent.contains(box)){
+        uiMutationObserver.disconnect();
+        uiMutationObserver = null;
+        if(!uiRemountTimeout){
+          uiRemountTimeout=setTimeout(async ()=>{
+            uiRemountTimeout=null;
+            try{ await ensureUI(); }
+            catch(e){ console.error('UI remount failed',e); }
+          },50);
+        }
+      }
+    });
+    uiMutationObserver.observe(parent,{childList:true,subtree:false});
+  }
 })();
