@@ -119,8 +119,8 @@
       el.dispatchEvent(new KeyboardEvent('keypress',{key:ch,bubbles:true}));
       el.dispatchEvent(new KeyboardEvent('keyup',{key:ch,bubbles:true}));
       await human();
-      if(Math.random()<0.1){
-        try{ window.scrollBy({top:rnd(-80,80),behavior:'smooth'}); }
+      if(Math.random()<0.03){
+        try{ window.scrollBy({top:rnd(-60,60),behavior:'smooth'}); }
         catch(e){ console.error('[typeHuman scroll]', e); }
         await human();
       }
