@@ -86,6 +86,22 @@
     el.scrollIntoView?.({block:'center'});
     el.focus?.();
     for(const ch of txt){
+            if(Math.random() < 0.05){
+        const prevErr=(el.value??el.textContent??'');
+        const wrongCh=String.fromCharCode(97+Math.floor(Math.random()*26));
+        if(el.isContentEditable){ el.textContent = prevErr + wrongCh; }
+        else setVal(el, prevErr + wrongCh);
+        el.dispatchEvent(new KeyboardEvent('keydown',{key:wrongCh,bubbles:true}));
+        el.dispatchEvent(new KeyboardEvent('keypress',{key:wrongCh,bubbles:true}));
+        el.dispatchEvent(new KeyboardEvent('keyup',{key:wrongCh,bubbles:true}));
+        await human();
+        const corrected=(el.value??el.textContent??'').slice(0,-1);
+        if(el.isContentEditable){ el.textContent = corrected; }
+        else setVal(el, corrected);
+        el.dispatchEvent(new KeyboardEvent('keydown',{key:'Backspace',bubbles:true}));
+        el.dispatchEvent(new KeyboardEvent('keyup',{key:'Backspace',bubbles:true}));
+        await human();
+      }
       const prev=(el.value??el.textContent??'');
       if(el.isContentEditable){ el.textContent = prev + ch; }
       else setVal(el, prev + ch);
@@ -194,7 +210,7 @@
   const STORE_TARGET_FORUM='jvc_mpwalker_target_forum';
 
   let onCache = false;
-  let sessionCache = {active:false,startTs:0,stopTs:0};
+  let sessionCache = {active:false,startTs:0,stopTs:0,mpCount:0,mpNextDelay:Math.floor(rnd(2,5))};
   let sessionCacheLoaded = false;
   if(typeof GM !== 'undefined' && GM.addValueChangeListener){
     GM.addValueChangeListener(STORE_CONF, async () => {
@@ -207,7 +223,7 @@
   }
   onCache = await get(STORE_ON,false);
 
-  const DEFAULTS = { me:'', cooldownH:96 };
+  const DEFAULTS = { me:'', cooldownH:96, activeHours:[0,24] };
   // Source: hard blacklist provided by the DM Walker community
   // Last updated: 2025-08-22
   const HARD_BL = new Set([
@@ -767,8 +783,22 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
   function startTimerUpdater(){ if(timerHandle) clearInterval(timerHandle); timerHandle=setInterval(()=>{updateSessionUI().catch(console.error);},1000); updateSessionUI().catch(console.error); }
 
   /* ---------- scheduler ---------- */
-  function tickSoon(ms=300){ setTimeout(() => { tick().catch(console.error); }, ms); }
-
+  async function tickSoon(ms=300){
+    const cfg = Object.assign({}, DEFAULTS, await loadConf());
+    const [startHour,endHour]=cfg.activeHours||[8,23];
+    const now=new Date();
+    const h=now.getHours();
+    if(h<startHour||h>=endHour){
+      await sessionStop();
+      const next=new Date(now);
+      if(h>=endHour) next.setDate(next.getDate()+1);
+      next.setHours(startHour,0,0,0);
+      const delay=next.getTime()-now.getTime();
+      setTimeout(()=>{ tickSoon(ms).catch(console.error); }, delay);
+      return;
+    }
+    setTimeout(() => { tick().catch(console.error); }, ms);
+  }
   async function tick(){
     if (ticking) return;
     ticking = true;
@@ -789,6 +819,17 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
       const res=await handleCompose(cfg);
       if(res.ok){
         log('MP sent.');
+        await sessionGet();
+        sessionCache.mpCount = (sessionCache.mpCount||0) + 1;
+        if(!sessionCache.mpNextDelay) sessionCache.mpNextDelay = Math.floor(rnd(2,5));
+        if(sessionCache.mpCount >= sessionCache.mpNextDelay){
+          const ms = Math.round(rnd(30000,120000));
+          log(`MP limit reached (${sessionCache.mpCount}) → sleeping ${Math.round(ms/1000)}s.`);
+          await sleep(ms);
+          sessionCache.mpCount = 0;
+          sessionCache.mpNextDelay = Math.floor(rnd(2,5));
+        }
+        await set(STORE_SESSION, sessionCache);
       }else{
         log(`Send failed / skipped${res.reason?` (${res.reason})`:''}.`);
       }
