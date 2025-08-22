@@ -208,37 +208,29 @@
   onCache = await get(STORE_ON,false);
 
   const DEFAULTS = { me:'', cooldownH:96 };
+   // List of known moderators/staff to avoid messaging.
+  // Source: community-maintained blacklist included in commit f2de4f6.
   const HARD_BL = new Set([
-   'moderation51','odoki','suumas','[firework]','wrondral','n-snake16',
-   'angry_skinny','therealmarco','protestant','alvin_stick','faunolefaune',
-   'a-la-peche','uossitreza','jomak','mangas-act','clem-du-30','lasnlleretour',
-   'ipaname','kai-kod','n-kingen','eiki16','endorph[-ine]','gabiven','Antistar',
-   'Krayzel', 'Ludens', 'jipoupierre', 'Odellbeckham', 'GsR-x-Perez',
-   'Latios[JV]', 'Tomy-Fett', 'Vortex646', 'Remysangfamy', 'Evilash08', 'Leirok',
-   'WolkAde2', 'Vykt0R41', 'Kamisamabob', 'DiZ25', 'Nalix', 'Nombre', 'teetest',
-   'dantedmc1', 'SMLennox', 'Retr0Pl4yer', '[sf]', 'Lan78', '[[Xou]]', 'Gamos',
-   'Linkpa', 'PommePhone', 'Mistho', 'MrFantastic', 'NaughtyGod', 'Shiptari',
-   'Chrysolithe', 'MonsieurDebat', 'Celuiquiestfor', 'dr_goomba', 'Oo-Fox-oO',
-   'Rika', 'Hernandieu', 'DrDee', 'Cyberhakim', 'Kimbo', 'Mazda', 'Kyo_Soma',
-   'Mario86', 'Thanhatos', 'TARDYL1973', 'Saiyar', 'GeoRodin', '[Sadik]',
-   'Raziel_2007', 'matt44200', 'patou260567', 'Y3Ti', 'adgjl', 'KingofAesthetic',
-   'allicroco', 'Lapintade', 'Thymotep', 'godrik', 'LGV', 'dnob700', 'Google_Bot',
-   'fatalkill', 'corochi', 'ZelProd', 'Penta_Pingouin', 'Suumas', 'Gus',
-   'resolution', 'daveuss', 'Darcaus', 'RuquierChasseur', 'RaMs', '[Hush]2',
-   'Pilou_CS', '-Cloud-', 'Shinruto93', 'Mac-Artist', 'Mandoulis',
-   'Chimene_Azalee', 'aisatsana[102]', 'Dieu_me_garde', 'Paulop', 'HypoBowling',
-   'Nargulu', 'Psnoffline', 'xofeye78', 'Grayhena', 'Jordan_Peterson',
-   'foundernoob', 'Tommy_Killer', 'BonbonneDeGaz', 'Jiti-way', 'Talib', 'ReWi98',
-   'adiom', 'Myssmelmel', 'mehdiguadi', 'Lauchhammer', 'Hildegarn', 'Mangas-AcT',
-   'clem-du-30', 'lasnlleretour', 'iPaname', 'Kai-Kod', 'N-King', 'Mugowar',
-   'TonyCannes', 'zavvi', 'Claudou28', 'Alighieri_Dante', 'Neofungamer',
-   'wrondral', 'n-snake16', 'Angry_skinny', 'Blaze', 'ktmzaer', 'Gnap_Gnap',
-   'dunkan', '[France77]', 'L_G', 'Mano', 'PuIsSaNcIeR', 'Sangowski', 'ASAP_Sven',
-   'Elsa', 'Kaaido', 'Cartographe', 'Yoda_Software', 'dakota-47', 'Duke3D',
-   'Yamachan', 'Hoshikaze', 'Kogba', 'PapiPigeon', 'TruePatriot', 'Guido_',
-   'Smoking_Lady', 'Hisokaa', 'Josc59', 'Kisuke4', 'S4viem', 'Enis-Karra',
-   'Jigako', 'Senkai', 'Lion-Heart38', '[Flolem]', 'chiasse-supreme',
-   'Cthulhus', 'Stinger[jv]', 'foun59', 'ElaBosak'
+   'moderation51', 'odoki', 'suumas', '[firework]', 'wrondral', 'n-snake16', 'angry_skinny', 'therealmarco',
+   'protestant', 'alvin_stick', 'faunolefaune', 'a-la-peche', 'uossitreza', 'jomak', 'mangas-act', 'clem-du-30',
+   'lasnlleretour', 'ipaname', 'kai-kod', 'n-kingen', 'eiki16', 'endorph[-ine]', 'gabiven', 'antistar', 'krayzel',
+   'ludens', 'jipoupierre', 'odellbeckham', 'gsr-x-perez', 'latios[jv]', 'tomy-fett', 'vortex646', 'remysangfamy',
+   'evilash08', 'leirok', 'wolkade2', 'vykt0r41', 'kamisamabob', 'diz25', 'nalix', 'nombre', 'teetest', 'dantedmc1',
+   'smlennox', 'retr0pl4yer', '[sf]', 'lan78', '[[xou]]', 'gamos', 'linkpa', 'pommephone', 'mistho', 'mrfantastic',
+   'naughtygod', 'shiptari', 'chrysolithe', 'monsieurdebat', 'celuiquiestfor', 'dr_goomba', 'oo-fox-oo', 'rika',
+   'hernandieu', 'drdee', 'cyberhakim', 'kimbo', 'mazda', 'kyo_soma', 'mario86', 'thanhatos', 'tardyl1973',
+   'saiyar', 'georodin', '[sadik]', 'raziel_2007', 'matt44200', 'patou260567', 'y3ti', 'adgjl', 'kingofaesthetic',
+   'allicroco', 'lapintade', 'thymotep', 'godrik', 'lgv', 'dnob700', 'google_bot', 'fatalkill', 'corochi',
+   'zelprod', 'penta_pingouin', 'gus', 'resolution', 'daveuss', 'darcaus', 'ruquierchasseur', 'rams', '[hush]2',
+   'pilou_cs', '-cloud-', 'shinruto93', 'mac-artist', 'mandoulis', 'chimene_azalee', 'aisatsana[102]', 'dieu_me_garde',
+   'paulop', 'hypobowling', 'nargulu', 'psnoffline', 'xofeye78', 'grayhena', 'jordan_peterson', 'foundernoob',
+   'tommy_killer', 'bonbonnedegaz', 'jiti-way', 'talib', 'rewi98', 'adiom', 'myssmelmel', 'mehdiguadi', 'lauchhammer',
+   'hildegarn', 'n-king', 'mugowar', 'tonycannes', 'zavvi', 'claudou28', 'alighieri_dante', 'neofungamer',
+   'blaze', 'ktmzaer', 'gnap_gnap', 'dunkan', '[france77]', 'l_g', 'mano', 'puissancier', 'sangowski', 'asap_sven',
+   'elsa', 'kaaido', 'cartographe', 'yoda_software', 'dakota-47', 'duke3d', 'yamachan', 'hoshikaze', 'kogba',
+   'papipigeon', 'truepatriot', 'guido_', 'smoking_lady', 'hisokaa', 'josc59', 'kisuke4', 's4viem', 'enis-karra',
+   'jigako', 'senkai', 'lion-heart38', '[flolem]', 'chiasse-supreme', 'cthulhus', 'stinger[jv]', 'foun59',
+   'elabosak'
   ]);
 
   const TITLE_BL = [/mod[ée]ration/i, /r[èe]gles/i];
@@ -279,9 +271,10 @@
     const clean = {};
     let changed = false;
     for (const [p, t] of Object.entries(m)) {
+       const low = p.toLowerCase();
       if (now - t < HRS(cooldownH)) {
-        clean[p] = t;
-      } else {
+        clean[low] = t;
+        if (low !== p) changed = true;      } else {
         changed = true;
       }
     }
@@ -303,7 +296,7 @@
     log('[myPseudo] pseudo not found');
     return '';
   }
-  
+
   /* ---------- message templates ---------- */
   const TITLE_TEMPLATES = [
     "Besoin d'aide URGENT","HELP : besoin d'aide","Full RSA besoin d'aide",
@@ -726,9 +719,10 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
     return out;
   }
 
-  if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { sanitizeURLs, addTrailingSpaces };
-    return;
+  if (typeof module !== 'undefined' &&
+      module.exports &&
+      typeof window === 'undefined') {
+      module.exports = { sanitizeURLs, addTrailingSpaces };
   }
 
   /* ---------- robust compact English UI ---------- */
@@ -767,7 +761,7 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
         log('Pseudo not found');
       }
     }
-    
+
     const box=document.createElement('div');
     box.id='jvc-dmwalker';
     Object.assign(box.style,{
@@ -854,7 +848,7 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
     q('#jvc-dmwalker-start').onclick=async()=>{
       const c=Object.assign({}, DEFAULTS, await loadConf());
       const pseudo = myPseudo();
-      c.me = pseudo || c.me || '';      
+      c.me = pseudo || c.me || '';
       await saveConf(c);
       if(!pseudo) log('Pseudo not found');
       await set(STORE_ON,true);
