@@ -292,8 +292,8 @@
 
   function myPseudo(){
   const t = q('.headerAccount__pseudo')?.textContent?.trim();
-  return t || 'Pseudo introuvable';
-}
+  return t || '';
+  }
   /* ---------- message templates ---------- */
   const TITLE_TEMPLATES = [
     "Besoin d'aide URGENT","HELP : besoin d'aide","Full RSA besoin d'aide",
@@ -742,12 +742,47 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
       }
     }, 700);    if(onCache) tickSoon(400);
   })();
+  
+    async function startHandler(){
+    const c=Object.assign({}, DEFAULTS, await loadConf());
+      const pseudo = myPseudo();
+      if(!pseudo){
+        log('Pseudo introuvable.');
+        return;
+      }
+      c.me = pseudo;
+    await saveConf(c);
+    await set(STORE_ON,true);
+    onCache = true;
+    await sessionStart();
+    log('Session started.');
+    tickSoon(250);
+  }
+
+  async function stopHandler(){
+    await set(STORE_ON,false);
+    onCache = false;
+    await sessionStop();
+    log('Session stopped.');
+  }
+
+  async function purgeHandler(){
+    await set(STORE_SENT,{});
+    log('96h memory cleared.');
+  }
 
   async function ensureUI(){
     if(q('#jvc-dmwalker')) return;
 
     const conf = Object.assign({}, DEFAULTS, await loadConf());
     if(!conf.me){ conf.me = myPseudo(); await saveConf(conf); }
+        if(!conf.me){
+      const pseudo = myPseudo();
+      if(pseudo){
+        conf.me = pseudo;
+        await saveConf(conf);
+      }
+    }
 
     const box=document.createElement('div');
     box.id='jvc-dmwalker';
@@ -785,6 +820,9 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
     purgeBtn.textContent='Clear 96h';
     Object.assign(purgeBtn.style,{background:'#333',border:'1px solid #555',color:'#bbb',padding:'5px 9px',borderRadius:'8px',cursor:'pointer'});
     actions.append(startBtn,stopBtn,purgeBtn);
+    startBtn.addEventListener('click', startHandler);
+    stopBtn.addEventListener('click', stopHandler);
+    purgeBtn.addEventListener('click', purgeHandler);
 
     const chronoWrap=document.createElement('div');
     Object.assign(chronoWrap.style,{display:'flex',justifyContent:'flex-start',alignItems:'center',marginBottom:'4px',fontVariantNumeric:'tabular-nums'});
@@ -832,25 +870,6 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
       window.toggleKeyHandler = toggleKeyHandler;
       document.addEventListener('keydown', toggleKeyHandler);
     }
-
-    q('#jvc-dmwalker-purge').onclick=async()=>{ await set(STORE_SENT,{}); log('96h memory cleared.'); };
-
-    q('#jvc-dmwalker-start').onclick=async()=>{
-      const c=Object.assign({}, DEFAULTS, await loadConf());
-      c.me = myPseudo() || c.me || '';
-      await saveConf(c);
-      await set(STORE_ON,true);
-      onCache = true;
-      await sessionStart();
-      log('Session started.');
-      tickSoon(250);
-    };
-    q('#jvc-dmwalker-stop').onclick =async()=>{
-      await set(STORE_ON,false);
-      onCache = false;
-      await sessionStop();
-      log('Session stopped.');
-    };
 
     if((await sessionGet()).active) await sessionStart();
     else await updateSessionUI();
