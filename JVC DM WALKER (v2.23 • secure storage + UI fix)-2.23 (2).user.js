@@ -716,8 +716,27 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
 
   /* ---------- robust compact English UI ---------- */
   (async function buildAndAutoStart(){
-    const tryUI=async()=>{ try{ await ensureUI({ DEFAULTS, loadConf, saveConf, myPseudo, startHandler, stopHandler, purgeHandler, sessionGet, sessionStart, updateSessionUI, state: uiState, log }); }catch(e){ console.error('[DM Walker] UI error', e); } };
-    if (document.readyState === 'loading'){ document.addEventListener('DOMContentLoaded', tryUI, {once:true}); }
+    const tryUI = async () => {
+      try {
+        await ensureUI({
+          DEFAULTS,
+          loadConf,
+          saveConf,
+          myPseudo,
+          startHandler,
+          stopHandler,
+          purgeHandler,
+          sessionGet,
+          sessionStart,
+          updateSessionUI,
+          state: uiState,
+          log
+        });
+      } catch (err) {
+        console.error(err);
+        log(`[DM Walker] UI error: ${err && err.message ? err.message : err}`);
+      }
+    };    if (document.readyState === 'loading'){ document.addEventListener('DOMContentLoaded', tryUI, {once:true}); }
     else { await tryUI(); }
     let retries=0;
     let mounting = false;
@@ -765,4 +784,10 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
     log('96h memory cleared.');
   }
   
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', ensureUI);
+  } else {
+    ensureUI();
+  }
+
 })();
