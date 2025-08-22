@@ -27,7 +27,20 @@
   const rnd=(a,b)=>a+Math.random()*(b-a);
   const human=()=>sleep(Math.round(rnd(49,105)));
   const dwell=(a=350,b=950)=>sleep(Math.round(rnd(a,b)));
+   /**
+  * Attend une durée aléatoire entre `min` et `max` en simulant des scrolls.
+  * En cas de configuration incorrecte (`min >= max`), les valeurs sont permutées
+  * ou remplacées par des valeurs par défaut pour éviter les erreurs.
+  */
  async function randomScrollWait(min,max){
+    // ensure a valid interval; if misconfigured swap or fallback to defaults
+    if(min >= max){
+      if(min > max) [min, max] = [max, min]; // swap if inverted
+      else { // min === max, use sane defaults
+        console.warn('[randomScrollWait] min and max equal; using defaults 2000-6000ms');
+        min = 2000; max = 6000;
+      }
+    }
     const end = NOW() + Math.round(rnd(min,max));
     while(NOW() < end){
       if(Math.random()<0.3){
@@ -528,11 +541,20 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
   }
   function generateMessage(){
     const subject = randomPick(TITLE_TEMPLATES) || '';
-    const message = addTrailingSpaces(sanitizeURLs(randomPick(TEXT_TEMPLATES) || ''));
-    return { subject, message };
+    const raw = sanitizeURLs(randomPick(TEXT_TEMPLATES) || '');
+    const message = addTrailingSpaces(raw);
+    if(!message.trim()){
+      console.warn('generateMessage: empty message, aborting send');
+      if(typeof alert === 'function'){
+        alert('Veuillez remplir au moins un template de message.');
+      }
+      return null;
+    }    return { subject, message };
   }
   function buildPersonalizedMessage(pseudo){
-    const { subject, message } = generateMessage();
+    const generated = generateMessage();
+    if(!generated){ return null; }
+    const { subject, message } = generated;
     const safePseudo = pseudo || "";
     return { subject, message: message.split("{pseudo}").join(safePseudo) };
   }
@@ -705,8 +727,10 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
       q('#destinataires .form-control-tag .label')?.childNodes?.[0]?.nodeValue?.trim() ||
       (qa('#destinataires input[name^="participants["]').map(i=>i.value)[0]??'') || '';
 
-    const { subject, message } = buildPersonalizedMessage(pseudo);
-
+    const generated = buildPersonalizedMessage(pseudo);
+    if(!generated){ return; }
+    const { subject, message } = generated;
+    
     const titre = q('#conv_titre, input[name="conv_titre"], input[placeholder*="sujet" i]');
     if(titre){ await human(); setVal(titre,''); await typeHuman(titre, subject||''); }
 
