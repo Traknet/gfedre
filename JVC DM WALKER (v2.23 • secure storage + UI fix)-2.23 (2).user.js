@@ -886,7 +886,7 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
       const atLast = await ensureAtLastPage();
       await dwell(800,2000);
       await randomScrollWait(3000,9000);
-      await randomScrollWait(2000,7000);
+      await randomScrollWait(2000,12000);
       const pseudo=await pickRandomEligiblePseudo(cfg, 6000);
       if(!pseudo){ log('No eligible user (cooldown/blacklist). Back to list.'); history.back(); return; }
 
