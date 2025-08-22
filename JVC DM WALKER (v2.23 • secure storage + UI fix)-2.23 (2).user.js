@@ -251,7 +251,7 @@
   }
   onCache = await get(STORE_ON,false);
 
-  const DEFAULTS = { me:'', cooldownH:96, activeHours:[0,24] };
+  const DEFAULTS = { me:'', cooldownH:96, activeHours:[8,23] };
   // Source: hard blacklist provided by the DM Walker community
   // Last updated: 2025-08-22
   const HARD_BL = new Set([
@@ -824,7 +824,7 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
   /* ---------- scheduler ---------- */
   async function tickSoon(ms=300){
     const cfg = Object.assign({}, DEFAULTS, await loadConf());
-    const [startHour,endHour]=cfg.activeHours||[8,23];
+    const [startHour,endHour]=cfg.activeHours;
     const now=new Date();
     const h=now.getHours();
     if(h<startHour||h>=endHour){
@@ -992,15 +992,18 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
     }, 700);    if(onCache) tickSoon(400);
   })();
 
-    async function startHandler(){
+  async function startHandler(){
     const c=Object.assign({}, DEFAULTS, await loadConf());
-      const pseudo = myPseudo();
-      if(!pseudo){
-        log('Pseudo introuvable — démarrage annulé.');
-        return;
-      }
-      c.me = pseudo;
-    await saveConf(c);
+    const pseudo = myPseudo();
+    if(!pseudo){
+      log('Pseudo introuvable — démarrage annulé.');
+      return;
+    }
+    const startEl=q('#jvc-dmwalker-active-start');
+    const endEl=q('#jvc-dmwalker-active-end');
+    const start=parseInt(startEl?startEl.value:c.activeHours[0],10);
+    const end=parseInt(endEl?endEl.value:c.activeHours[1],10);
+    await saveConf({ ...c, me:pseudo, activeHours:[start,end] });
     await set(STORE_ON,true);
     onCache = true;
     await sessionStart();
@@ -1073,6 +1076,24 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
     stopBtn.addEventListener('click', stopHandler);
     purgeBtn.addEventListener('click', purgeHandler);
 
+    const hoursWrap=document.createElement('div');
+    Object.assign(hoursWrap.style,{display:'flex',alignItems:'center',gap:'4px',margin:'6px 0'});
+    const hoursLabel=document.createElement('span');
+    hoursLabel.textContent='Heures actives';
+    const startInput=document.createElement('input');
+    startInput.type='number';
+    startInput.id='jvc-dmwalker-active-start';
+    startInput.value=conf.activeHours[0];
+    startInput.min='0'; startInput.max='24';
+    Object.assign(startInput.style,{width:'40px',background:'#0b0d12',color:'#eee',border:'1px solid #222',borderRadius:'4px'});
+    const endInput=document.createElement('input');
+    endInput.type='number';
+    endInput.id='jvc-dmwalker-active-end';
+    endInput.value=conf.activeHours[1];
+    endInput.min='0'; endInput.max='24';
+    Object.assign(endInput.style,{width:'40px',background:'#0b0d12',color:'#eee',border:'1px solid #222',borderRadius:'4px'});
+    hoursWrap.append(hoursLabel,startInput,endInput);
+    
     const chronoWrap=document.createElement('div');
     Object.assign(chronoWrap.style,{display:'flex',justifyContent:'flex-start',alignItems:'center',marginBottom:'4px',fontVariantNumeric:'tabular-nums'});
     const chronoInner=document.createElement('div');
@@ -1093,7 +1114,7 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
     });
     logEl=log;
 
-    box.append(header,actions,chronoWrap,log);
+    box.append(header,actions,hoursWrap,chronoWrap,log);
 
     const parent=document.body||document.documentElement;
     parent.appendChild(box);
