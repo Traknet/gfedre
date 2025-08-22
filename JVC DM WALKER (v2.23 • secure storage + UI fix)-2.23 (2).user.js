@@ -208,34 +208,36 @@
   onCache = await get(STORE_ON,false);
 
   const DEFAULTS = { me:'', cooldownH:96 };
+  // Source: hard blacklist provided by the DM Walker community
+  // Last updated: 2025-08-22
   const HARD_BL = new Set([
-   'angry_skinny','therealmarco','protestant','alvin_stick','faunolefaune','a-la-peche',
-   'uossitreza','jomak','mangas-act','clem-du-30','lasnlleretour','ipaname',
-   'kai-kod','n-kingen','eiki16','endorph[-ine]','gabiven','antistar',
-   'krayzel','ludens','jipoupierre','odellbeckham','gsr-x-perez','latios[jv]',
-   'tomy-fett','vortex646','remysangfamy','evilash08','leirok','wolkade2',
-   'vykt0r41','kamisamabob','diz25','nalix','nombre','teetest',
-   'dantedmc1','smlennox','retr0pl4yer','[sf]','lan78','[[xou]]',
-   'gamos','linkpa','pommephone','mistho','mrfantastic','naughtygod',
-   'shiptari','chrysolithe','monsieurdebat','celuiquiestfor','dr_goomba','oo-fox-oo',
-   'rika','hernandieu','drdee','cyberhakim','kimbo','mazda',
-   'kyo_soma','mario86','thanhatos','tardyl1973','saiyar','georodin',
-   '[sadik]','raziel_2007','matt44200','patou260567','y3ti','adgjl',
-   'kingofaesthetic','allicroco','lapintade','thymotep','godrik','lgv',
-   'dnob700','google_bot','fatalkill','corochi','zelprod','penta_pingouin',
-   'gus','resolution','daveuss','darcaus','ruquierchasseur','rams',
-   '[hush]2','pilou_cs','-cloud-','shinruto93','mac-artist','mandoulis',
-   'chimene_azalee','aisatsana[102]','dieu_me_garde','paulop','hypobowling','nargulu',
-   'psnoffline','xofeye78','grayhena','jordan_peterson','foundernoob','tommy_killer',
-   'bonbonnedegaz','jiti-way','talib','rewi98','adiom','myssmelmel',
-   'mehdiguadi','lauchhammer','hildegarn','n-king','mugowar','tonycannes',
-   'zavvi','claudou28','alighieri_dante','neofungamer','blaze','ktmzaer',
-   'gnap_gnap','dunkan','[france77]','l_g','mano','puissancier',
-   'sangowski','asap_sven','elsa','kaaido','cartographe','yoda_software',
-   'dakota-47','duke3d','yamachan','hoshikaze','kogba','papipigeon',
-   'truepatriot','guido_','smoking_lady','hisokaa','josc59','kisuke4',
-   's4viem','enis-karra','jigako','senkai','lion-heart38','[flolem]',
-   'chiasse-supreme','cthulhus','stinger[jv]','foun59','elabosak',
+   '-cloud-','[[xou]]','[flolem]','[france77]','[hush]2','[sadik]',
+   '[sf]','a-la-peche','adgjl','adiom','aisatsana[102]','alighieri_dante',
+   'allicroco','alvin_stick','angry_skinny','antistar','asap_sven','blaze',
+   'bonbonnedegaz','cartographe','celuiquiestfor','chiasse-supreme','chimene_azalee','chrysolithe',
+   'claudou28','clem-du-30','corochi','cthulhus','cyberhakim','dakota-47',
+   'dantedmc1','darcaus','daveuss','dieu_me_garde','diz25','dnob700',
+   'dr_goomba','drdee','duke3d','dunkan','eiki16','elabosak',
+   'elsa','endorph[-ine]','enis-karra','evilash08','fatalkill','faunolefaune',
+   'foun59','foundernoob','gabiven','gamos','georodin','gnap_gnap',
+   'godrik','google_bot','grayhena','gsr-x-perez','guido_','gus',
+   'hernandieu','hildegarn','hisokaa','hoshikaze','hypobowling','ipaname',
+   'jigako','jipoupierre','jiti-way','jomak','jordan_peterson','josc59',
+   'kaaido','kai-kod','kamisamabob','kimbo','kingofaesthetic','kisuke4',
+   'kogba','krayzel','ktmzaer','kyo_soma','l_g','lan78',
+   'lapintade','lasnlleretour','latios[jv]','lauchhammer','leirok','lgv',
+   'linkpa','lion-heart38','ludens','mac-artist','mandoulis','mangas-act',
+   'mano','mario86','matt44200','mazda','mehdiguadi','mistho',
+   'monsieurdebat','mrfantastic','mugowar','myssmelmel','n-kingen',
+   'nalix','nargulu','naughtygod','neofungamer','nombre','odellbeckham',
+   'oo-fox-oo','papipigeon','patou260567','paulop','penta_pingouin','pilou_cs',
+   'pommephone','protestant','psnoffline','puissancier','rams','raziel_2007',
+   'remysangfamy','resolution','retr0pl4yer','rewi98','rika','ruquierchasseur',
+   's4viem','saiyar','sangowski','senkai','shinruto93','shiptari',
+   'smlennox','smoking_lady','stinger[jv]','talib','tardyl1973','teetest',
+   'thanhatos','therealmarco','thymotep','tommy_killer','tomy-fett','tonycannes',
+   'truepatriot','uossitreza','vortex646','vykt0r41','wolkade2','xofeye78',
+   'y3ti','yamachan','yoda_software','zavvi','zelprod',
   ]);
 
   const TITLE_BL = [/mod[ée]ration/i, /r[èe]gles/i];
@@ -288,8 +290,10 @@
     return clean;
   };
 
-  function myPseudo(){ for(const s of ['.headerAccount__pseudo','.header .pseudo','a[href*="/profil/"]']){ const t=q(s)?.textContent?.trim(); if(t) return t; } return ''; }
-
+  function myPseudo(){
+  const t = q('.headerAccount__pseudo')?.textContent?.trim();
+  return t || 'Pseudo introuvable';
+}
   /* ---------- message templates ---------- */
   const TITLE_TEMPLATES = [
     "Besoin d'aide URGENT","HELP : besoin d'aide","Full RSA besoin d'aide",
@@ -712,9 +716,8 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
     return out;
   }
 
-  if (typeof module !== 'undefined' && module.exports) {
+  if (typeof module !== 'undefined' && module.exports && typeof window === 'undefined') {
     module.exports = { sanitizeURLs, addTrailingSpaces };
-    return;
   }
 
   /* ---------- robust compact English UI ---------- */
@@ -755,31 +758,58 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
       boxShadow:'0 8px 24px rgba(0,0,0,.5)',
       font:'12px/1.4 system-ui,Segoe UI,Roboto,Arial'
     });
-    box.innerHTML=`
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-        <strong style="font-size:12px;flex:1;">JVC DM WALKER</strong>
-        <span id="jvc-dmwalker-status" style="font-weight:700;color:#bbb">OFF</span>
-      </div>
-      <div style="display:flex;align-items:center;gap:8px;margin:6px 0;">
-        <button id="jvc-dmwalker-start" style="background:#2a6ef5;border:0;color:#fff;padding:5px 9px;border-radius:8px;cursor:pointer">Start</button>
-        <button id="jvc-dmwalker-stop"  style="background:#8a2020;border:0;color:#fff;padding:5px 9px;border-radius:8px;cursor:pointer">Stop</button>
-        <button id="jvc-dmwalker-purge" style="background:#333;border:1px solid #555;color:#bbb;padding:5px 9px;border-radius:8px;cursor:pointer">Clear 96h</button>
-      </div>
-      <div style="display:flex;justify-content:flex-start;align-items:center;margin-bottom:4px;font-variant-numeric:tabular-nums">
-        <div>⏱ <span id="jvc-dmwalker-chrono">00:00:00</span></div>
-      </div>
-      <div id="jvc-dmwalker-log" style="
-        margin-top:2px;color:#9ecbff;
-        line-height:1.4;
-        height:5.6em;
-        overflow:auto; white-space:pre-wrap;
-        background:#0b0d12; border:1px solid #222; border-radius:8px; padding:6px;"></div>`;
+    const header=document.createElement('div');
+    Object.assign(header.style,{display:'flex',alignItems:'center',gap:'8px',marginBottom:'6px'});
+    const title=document.createElement('strong');
+    title.textContent='JVC DM WALKER';
+    Object.assign(title.style,{fontSize:'12px',flex:'1'});
+    const status=document.createElement('span');
+    status.id='jvc-dmwalker-status';
+    status.textContent='OFF';
+    Object.assign(status.style,{fontWeight:'700',color:'#bbb'});
+    statusEl=status;
+    header.append(title,status);
 
-    const parent = document.body || document.documentElement;
+    const actions=document.createElement('div');
+    Object.assign(actions.style,{display:'flex',alignItems:'center',gap:'8px',margin:'6px 0'});
+    const startBtn=document.createElement('button');
+    startBtn.id='jvc-dmwalker-start';
+    startBtn.textContent='Start';
+    Object.assign(startBtn.style,{background:'#2a6ef5',border:'0',color:'#fff',padding:'5px 9px',borderRadius:'8px',cursor:'pointer'});
+    const stopBtn=document.createElement('button');
+    stopBtn.id='jvc-dmwalker-stop';
+    stopBtn.textContent='Stop';
+    Object.assign(stopBtn.style,{background:'#8a2020',border:'0',color:'#fff',padding:'5px 9px',borderRadius:'8px',cursor:'pointer'});
+    const purgeBtn=document.createElement('button');
+    purgeBtn.id='jvc-dmwalker-purge';
+    purgeBtn.textContent='Clear 96h';
+    Object.assign(purgeBtn.style,{background:'#333',border:'1px solid #555',color:'#bbb',padding:'5px 9px',borderRadius:'8px',cursor:'pointer'});
+    actions.append(startBtn,stopBtn,purgeBtn);
+
+    const chronoWrap=document.createElement('div');
+    Object.assign(chronoWrap.style,{display:'flex',justifyContent:'flex-start',alignItems:'center',marginBottom:'4px',fontVariantNumeric:'tabular-nums'});
+    const chronoInner=document.createElement('div');
+    chronoInner.textContent='⏱ ';
+    const chrono=document.createElement('span');
+    chrono.id='jvc-dmwalker-chrono';
+    chrono.textContent='00:00:00';
+    chronoEl=chrono;
+    chronoInner.appendChild(chrono);
+    chronoWrap.appendChild(chronoInner);
+
+    const log=document.createElement('div');
+    log.id='jvc-dmwalker-log';
+    Object.assign(log.style,{
+      marginTop:'2px',color:'#9ecbff',lineHeight:'1.4',height:'5.6em',
+      overflow:'auto',whiteSpace:'pre-wrap',background:'#0b0d12',
+      border:'1px solid #222',borderRadius:'8px',padding:'6px'
+    });
+    logEl=log;
+
+    box.append(header,actions,chronoWrap,log);
+
+    const parent=document.body||document.documentElement;
     parent.appendChild(box);
-    chronoEl = q('#jvc-dmwalker-chrono');
-    statusEl = q('#jvc-dmwalker-status');
-    logEl = q('#jvc-dmwalker-log');
 
     let b=q('#jvc-dmwalker-badge');
     if(!b){
