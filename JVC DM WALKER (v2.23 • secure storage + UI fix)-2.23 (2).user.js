@@ -860,6 +860,12 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
       if(!pseudo){ log('No eligible user (cooldown/blacklist). Back to list.'); history.back(); return; }
 
       log(`Chosen random target → ${pseudo}`);
+      await dwell(3000,9000);
+      try{
+        const msg=q('.bloc-message-forum');
+        if(msg) await humanHover(msg);
+        else window.scrollBy({top:rnd(-120,120),behavior:'smooth'});
+      }catch(e){ console.error('[nav mimic]', e); }
       const url=`${ORIG}/messages-prives/nouveau.php?all_dest=${encodeURIComponent(pseudo)}`;
       location.href=url;
       return;
