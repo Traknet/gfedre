@@ -209,10 +209,36 @@
 
   const DEFAULTS = { me:'', cooldownH:96 };
   const HARD_BL = new Set([
-    'moderation51','odoki','suumas','[firework]','wrondral','n-snake16',
-    'angry_skinny','therealmarco','protestant','alvin_stick','faunolefaune',
-    'a-la-peche','uossitreza','jomak','mangas-act','clem-du-30','lasnlleretour',
-    'ipaname','kai-kod','n-kingen','eiki16','endorph[-ine]','gabiven'
+   'moderation51','odoki','suumas','[firework]','wrondral','n-snake16',
+   'angry_skinny','therealmarco','protestant','alvin_stick','faunolefaune',
+   'a-la-peche','uossitreza','jomak','mangas-act','clem-du-30','lasnlleretour',
+   'ipaname','kai-kod','n-kingen','eiki16','endorph[-ine]','gabiven','Antistar',
+   'Krayzel', 'Ludens', 'jipoupierre', 'Odellbeckham', 'GsR-x-Perez',
+   'Latios[JV]', 'Tomy-Fett', 'Vortex646', 'Remysangfamy', 'Evilash08', 'Leirok',
+   'WolkAde2', 'Vykt0R41', 'Kamisamabob', 'DiZ25', 'Nalix', 'Nombre', 'teetest',
+   'dantedmc1', 'SMLennox', 'Retr0Pl4yer', '[sf]', 'Lan78', '[[Xou]]', 'Gamos',
+   'Linkpa', 'PommePhone', 'Mistho', 'MrFantastic', 'NaughtyGod', 'Shiptari',
+   'Chrysolithe', 'MonsieurDebat', 'Celuiquiestfor', 'dr_goomba', 'Oo-Fox-oO',
+   'Rika', 'Hernandieu', 'DrDee', 'Cyberhakim', 'Kimbo', 'Mazda', 'Kyo_Soma',
+   'Mario86', 'Thanhatos', 'TARDYL1973', 'Saiyar', 'GeoRodin', '[Sadik]',
+   'Raziel_2007', 'matt44200', 'patou260567', 'Y3Ti', 'adgjl', 'KingofAesthetic',
+   'allicroco', 'Lapintade', 'Thymotep', 'godrik', 'LGV', 'dnob700', 'Google_Bot',
+   'fatalkill', 'corochi', 'ZelProd', 'Penta_Pingouin', 'Suumas', 'Gus',
+   'resolution', 'daveuss', 'Darcaus', 'RuquierChasseur', 'RaMs', '[Hush]2',
+   'Pilou_CS', '-Cloud-', 'Shinruto93', 'Mac-Artist', 'Mandoulis',
+   'Chimene_Azalee', 'aisatsana[102]', 'Dieu_me_garde', 'Paulop', 'HypoBowling',
+   'Nargulu', 'Psnoffline', 'xofeye78', 'Grayhena', 'Jordan_Peterson',
+   'foundernoob', 'Tommy_Killer', 'BonbonneDeGaz', 'Jiti-way', 'Talib', 'ReWi98',
+   'adiom', 'Myssmelmel', 'mehdiguadi', 'Lauchhammer', 'Hildegarn', 'Mangas-AcT',
+   'clem-du-30', 'lasnlleretour', 'iPaname', 'Kai-Kod', 'N-King', 'Mugowar',
+   'TonyCannes', 'zavvi', 'Claudou28', 'Alighieri_Dante', 'Neofungamer',
+   'wrondral', 'n-snake16', 'Angry_skinny', 'Blaze', 'ktmzaer', 'Gnap_Gnap',
+   'dunkan', '[France77]', 'L_G', 'Mano', 'PuIsSaNcIeR', 'Sangowski', 'ASAP_Sven',
+   'Elsa', 'Kaaido', 'Cartographe', 'Yoda_Software', 'dakota-47', 'Duke3D',
+   'Yamachan', 'Hoshikaze', 'Kogba', 'PapiPigeon', 'TruePatriot', 'Guido_',
+   'Smoking_Lady', 'Hisokaa', 'Josc59', 'Kisuke4', 'S4viem', 'Enis-Karra',
+   'Jigako', 'Senkai', 'Lion-Heart38', '[Flolem]', 'chiasse-supreme',
+   'Cthulhus', 'Stinger[jv]', 'foun59', 'ElaBosak'
   ]);
 
   const TITLE_BL = [/mod[ée]ration/i, /r[èe]gles/i];
