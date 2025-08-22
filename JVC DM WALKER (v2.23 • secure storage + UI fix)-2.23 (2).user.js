@@ -211,33 +211,166 @@
   // Source: hard blacklist provided by the DM Walker community
   // Last updated: 2025-08-22
   const HARD_BL = new Set([
-   '-cloud-','[[xou]]','[flolem]','[france77]','[hush]2','[sadik]',
-   '[sf]','a-la-peche','adgjl','adiom','aisatsana[102]','alighieri_dante',
-   'allicroco','alvin_stick','angry_skinny','antistar','asap_sven','blaze',
-   'bonbonnedegaz','cartographe','celuiquiestfor','chiasse-supreme','chimene_azalee','chrysolithe',
-   'claudou28','clem-du-30','corochi','cthulhus','cyberhakim','dakota-47',
-   'dantedmc1','darcaus','daveuss','dieu_me_garde','diz25','dnob700',
-   'dr_goomba','drdee','duke3d','dunkan','eiki16','elabosak',
-   'elsa','endorph[-ine]','enis-karra','evilash08','fatalkill','faunolefaune',
-   'foun59','foundernoob','gabiven','gamos','georodin','gnap_gnap',
-   'godrik','google_bot','grayhena','gsr-x-perez','guido_','gus',
-   'hernandieu','hildegarn','hisokaa','hoshikaze','hypobowling','ipaname',
-   'jigako','jipoupierre','jiti-way','jomak','jordan_peterson','josc59',
-   'kaaido','kai-kod','kamisamabob','kimbo','kingofaesthetic','kisuke4',
-   'kogba','krayzel','ktmzaer','kyo_soma','l_g','lan78',
-   'lapintade','lasnlleretour','latios[jv]','lauchhammer','leirok','lgv',
-   'linkpa','lion-heart38','ludens','mac-artist','mandoulis','mangas-act',
-   'mano','mario86','matt44200','mazda','mehdiguadi','mistho',
-   'monsieurdebat','mrfantastic','mugowar','myssmelmel','n-kingen',
-   'nalix','nargulu','naughtygod','neofungamer','nombre','odellbeckham',
-   'oo-fox-oo','papipigeon','patou260567','paulop','penta_pingouin','pilou_cs',
-   'pommephone','protestant','psnoffline','puissancier','rams','raziel_2007',
-   'remysangfamy','resolution','retr0pl4yer','rewi98','rika','ruquierchasseur',
-   's4viem','saiyar','sangowski','senkai','shinruto93','shiptari',
-   'smlennox','smoking_lady','stinger[jv]','talib','tardyl1973','teetest',
-   'thanhatos','therealmarco','thymotep','tommy_killer','tomy-fett','tonycannes',
-   'truepatriot','uossitreza','vortex646','vykt0r41','wolkade2','xofeye78',
-   'y3ti','yamachan','yoda_software','zavvi','zelprod',
+    '-cloud-',
+    '[[xou]]',
+    '[flolem]',
+    '[france77]',
+    '[hush]2',
+    '[sadik]',
+    '[sf]',
+    'a-la-peche',
+    'adgjl',
+    'adiom',
+    'aisatsana[102]',
+    'alighieri_dante',
+    'allicroco',
+    'alvin_stick',
+    'angry_skinny',
+    'antistar',
+    'asap_sven',
+    'blaze',
+    'bonbonnedegaz',
+    'cartographe',
+    'celuiquiestfor',
+    'chiasse-supreme',
+    'chimene_azalee',
+    'chrysolithe',
+    'claudou28',
+    'clem-du-30',
+    'corochi',
+    'cthulhus',
+    'cyberhakim',
+    'dakota-47',
+    'dantedmc1',
+    'darcaus',
+    'daveuss',
+    'dieu_me_garde',
+    'diz25',
+    'dnob700',
+    'dr_goomba',
+    'drdee',
+    'duke3d',
+    'dunkan',
+    'eiki16',
+    'elabosak',
+    'elsa',
+    'endorph[-ine]',
+    'enis-karra',
+    'evilash08',
+    'fatalkill',
+    'faunolefaune',
+    'foun59',
+    'foundernoob',
+    'gabiven',
+    'gamos',
+    'georodin',
+    'gnap_gnap',
+    'godrik',
+    'google_bot',
+    'grayhena',
+    'gsr-x-perez',
+    'guido_',
+    'gus',
+    'hernandieu',
+    'hildegarn',
+    'hisokaa',
+    'hoshikaze',
+    'hypobowling',
+    'ipaname',
+    'jigako',
+    'jipoupierre',
+    'jiti-way',
+    'jomak',
+    'jordan_peterson',
+    'josc59',
+    'kaaido',
+    'kai-kod',
+    'kamisamabob',
+    'kimbo',
+    'kingofaesthetic',
+    'kisuke4',
+    'kogba',
+    'krayzel',
+    'ktmzaer',
+    'kyo_soma',
+    'l_g',
+    'lan78',
+    'lapintade',
+    'lasnlleretour',
+    'latios[jv]',
+    'lauchhammer',
+    'leirok',
+    'lgv',
+    'linkpa',
+    'lion-heart38',
+    'ludens',
+    'mac-artist',
+    'mandoulis',
+    'mangas-act',
+    'mano',
+    'mario86',
+    'matt44200',
+    'mazda',
+    'mehdiguadi',
+    'mistho',
+    'monsieurdebat',
+    'mrfantastic',
+    'mugowar',
+    'myssmelmel',
+    'n-kingen',
+    'nalix',
+    'nargulu',
+    'naughtygod',
+    'neofungamer',
+    'nombre',
+    'odellbeckham',
+    'oo-fox-oo',
+    'papipigeon',
+    'patou260567',
+    'paulop',
+    'penta_pingouin',
+    'pilou_cs',
+    'pommephone',
+    'protestant',
+    'psnoffline',
+    'puissancier',
+    'rams',
+    'raziel_2007',
+    'remysangfamy',
+    'resolution',
+    'retr0pl4yer',
+    'rewi98',
+    'rika',
+    'ruquierchasseur',
+    's4viem',
+    'saiyar',
+    'sangowski',
+    'senkai',
+    'shinruto93',
+    'shiptari',
+    'smlennox',
+    'smoking_lady',
+    'stinger[jv]',
+    'talib',
+    'tardyl1973',
+    'teetest',
+    'thanhatos',
+    'therealmarco',
+    'thymotep',
+    'tommy_killer',
+    'tomy-fett',
+    'tonycannes',
+    'truepatriot',
+    'uossitreza',
+    'vortex646',
+    'vykt0r41',
+    'wolkade2',
+    'xofeye78',
+    'y3ti',
+    'yamachan',
+    'yoda_software',
+    'zavvi',
+    'zelprod',
   ]);
 
   const TITLE_BL = [/mod[ée]ration/i, /r[èe]gles/i];
@@ -291,8 +424,17 @@
   };
 
   function myPseudo(){
-  const t = q('.headerAccount__pseudo')?.textContent?.trim();
-  return t || '';
+  const selectors=[
+    '.headerAccount__pseudo',
+    '.account__pseudo',
+    'a.headerAccount__user',
+    'a[href*="/profil/"]'
+  ];
+  for(const sel of selectors){
+    const t=q(sel)?.textContent?.trim();
+    if(t) return t;
+  }
+  return '';
   }
   /* ---------- message templates ---------- */
   const TITLE_TEMPLATES = [
@@ -560,6 +702,13 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
   }
   async function sessionStart(){
     await sessionGet();
+        if(!myPseudo()){
+      log('Pseudo introuvable — session non démarrée.');
+      onCache=false;
+      await set(STORE_ON,false);
+      await updateSessionUI();
+      return;
+    }
     if(!sessionCache.active || !sessionCache.startTs) sessionCache.startTs = NOW();
     sessionCache.active = true;
     sessionCache.stopTs = 0;
@@ -747,7 +896,7 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
     const c=Object.assign({}, DEFAULTS, await loadConf());
       const pseudo = myPseudo();
       if(!pseudo){
-        log('Pseudo introuvable.');
+        log('Pseudo introuvable — démarrage annulé.');
         return;
       }
       c.me = pseudo;
