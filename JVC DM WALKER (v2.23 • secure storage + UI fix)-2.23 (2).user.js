@@ -788,10 +788,11 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
       await updateSessionUI();
       return;
     }
+    const wasActive = sessionCache.active;
     if(!sessionCache.active || !sessionCache.startTs) sessionCache.startTs = NOW();
     sessionCache.active = true;
     sessionCache.stopTs = 0;
-    sessionCache.dmSent = 0;
+    if(!wasActive) sessionCache.dmSent = 0;
     await set(STORE_SESSION, sessionCache);
     startTimerUpdater();
   }
@@ -827,6 +828,12 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
       }
       if(!dmCountEl) dmCountEl = q('#jvc-dmwalker-dmcount');
       if(dmCountEl) dmCountEl.textContent = String(s.dmSent||0);
+      
+      const c = Object.assign({}, DEFAULTS, await loadConf());
+      const startEl = q('#jvc-dmwalker-active-start');
+      if(startEl) startEl.value = c.activeHours[0];
+      const endEl = q('#jvc-dmwalker-active-end');
+      if(endEl) endEl.value = c.activeHours[1];
     } finally {
       updating = false;
     }
@@ -1142,7 +1149,7 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
     });
     logEl=log;
 
-    box.append(header,actions,chronoWrap,dmWrap,log);
+    box.append(header,actions,hoursWrap,chronoWrap,dmWrap,log);
 
     const parent=document.body||document.documentElement;
     parent.appendChild(box);
@@ -1169,8 +1176,10 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
       document.addEventListener('keydown', toggleKeyHandler);
     }
 
-    if((await sessionGet()).active) await sessionStart();
-    else await updateSessionUI();
+    if((await sessionGet()).active) {
+      startTimerUpdater();
+      tickSoon();
+    } else await updateSessionUI();
 
     uiMutationObserver = new MutationObserver(()=>{
       if(!parent.contains(box)){
