@@ -27,6 +27,16 @@
   const rnd=(a,b)=>a+Math.random()*(b-a);
   const human=()=>sleep(Math.round(rnd(49,105)));
   const dwell=(a=350,b=950)=>sleep(Math.round(rnd(a,b)));
+ async function randomScrollWait(min,max){
+    const end = NOW() + Math.round(rnd(min,max));
+    while(NOW() < end){
+      if(Math.random()<0.3){
+        try{ window.scrollBy({top:rnd(-120,120),behavior:'smooth'}); }
+        catch(e){ console.error('[randomScrollWait]', e); }
+      }
+      await dwell(400,1200);
+    }
+  }
   const q=(s,r=document)=>r.querySelector(s);
   const qa=(s,r=document)=>Array.from(r.querySelectorAll(s));
   const NOW=()=>Date.now(), HRS=h=>h*3600e3;
@@ -114,6 +124,7 @@
         catch(e){ console.error('[typeHuman scroll]', e); }
         await human();
       }
+    }
     await human();
   }
 
@@ -860,12 +871,13 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
 
       const atLast = await ensureAtLastPage();
       await dwell(800,2000);
-      await randomScrollWait(2000,4000);
+      await randomScrollWait(3000,7000);
+      await randomScrollWait(2000,6000);
       const pseudo=await pickRandomEligiblePseudo(cfg, 6000);
       if(!pseudo){ log('No eligible user (cooldown/blacklist). Back to list.'); history.back(); return; }
 
       log(`Chosen random target → ${pseudo}`);
-      await dwell(400,1200);
+      await dwell(1200,3000);
       try{
         const msg=q('.bloc-message-forum');
         if(msg) await humanHover(msg);
