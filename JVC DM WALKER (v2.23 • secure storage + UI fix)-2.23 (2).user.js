@@ -27,6 +27,16 @@
   const rnd=(a,b)=>a+Math.random()*(b-a);
   const human=()=>sleep(Math.round(rnd(49,105)));
   const dwell=(a=350,b=950)=>sleep(Math.round(rnd(a,b)));
+  async function randomScrollWait(min,max){
+    const end = NOW() + Math.round(rnd(min,max));
+    while(NOW() < end){
+      if(Math.random()<0.3){
+        try{ window.scrollBy({top:rnd(-120,120),behavior:'smooth'}); }
+        catch(e){ console.error('[randomScrollWait]', e); }
+      }
+      await dwell(400,1200);
+    }
+  }
    /**
   * Attend une durée aléatoire entre `min` et `max` en simulant des scrolls.
   * En cas de configuration incorrecte (`min >= max`), les valeurs sont permutées
@@ -55,7 +65,7 @@
   const NOW=()=>Date.now(), HRS=h=>h*3600e3;
   const ORIG=typeof location !== 'undefined' ? location.origin : '';
 
-  let chronoEl=null, statusEl=null, logEl=null;
+let chronoEl=null, statusEl=null, logEl=null, dmCountEl=null;
 
   const logBuffer=[]; let logIdx=0; const log=(s)=>{
     logBuffer[logIdx++ % 200] = s;
@@ -93,6 +103,8 @@
         chronoEl=null;
         statusEl=null;
         logEl=null;
+        dmCountEl=null;
+
     }
     window.addEventListener('unload', cleanupUI);
   }
@@ -238,7 +250,7 @@
   const STORE_TARGET_FORUM='jvc_mpwalker_target_forum';
 
   let onCache = false;
-  let sessionCache = {active:false,startTs:0,stopTs:0,mpCount:0,mpNextDelay:Math.floor(rnd(2,5))};
+let sessionCache = {active:false,startTs:0,stopTs:0,mpCount:0,mpNextDelay:Math.floor(rnd(2,5)),dmSent:0};
   let sessionCacheLoaded = false;
   if(typeof GM !== 'undefined' && GM.addValueChangeListener){
     GM.addValueChangeListener(STORE_CONF, async () => {
@@ -779,6 +791,7 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
     if(!sessionCache.active || !sessionCache.startTs) sessionCache.startTs = NOW();
     sessionCache.active = true;
     sessionCache.stopTs = 0;
+    sessionCache.dmSent = 0;
     await set(STORE_SESSION, sessionCache);
     startTimerUpdater();
   }
@@ -812,6 +825,8 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
         statusEl.textContent = on?'ON':'OFF';
         statusEl.style.color = on?'#32d296':'#bbb';
       }
+      if(!dmCountEl) dmCountEl = q('#jvc-dmwalker-dmcount');
+      if(dmCountEl) dmCountEl.textContent = String(s.dmSent||0);
     } finally {
       updating = false;
     }
@@ -860,6 +875,7 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
         log('MP sent.');
         await sessionGet();
         sessionCache.mpCount = (sessionCache.mpCount||0) + 1;
+        sessionCache.dmSent = (sessionCache.dmSent||0) + 1;
         if(!sessionCache.mpNextDelay) sessionCache.mpNextDelay = Math.floor(rnd(2,5));
         if(sessionCache.mpCount >= sessionCache.mpNextDelay){
           const ms = Math.round(rnd(30000,120000));
@@ -897,11 +913,12 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
       await dwell(800,2000);
       await randomScrollWait(3000,7000);
       await randomScrollWait(2000,6000);
+      await randomScrollWait(2000,4000);
       const pseudo=await pickRandomEligiblePseudo(cfg, 6000);
       if(!pseudo){ log('No eligible user (cooldown/blacklist). Back to list.'); history.back(); return; }
 
       log(`Chosen random target → ${pseudo}`);
-      await dwell(1200,3000);
+      await dwell(400,1200);
       try{
         const msg=q('.bloc-message-forum');
         if(msg) await humanHover(msg);
@@ -1105,6 +1122,17 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
     chronoInner.appendChild(chrono);
     chronoWrap.appendChild(chronoInner);
 
+    const dmWrap=document.createElement('div');
+    Object.assign(dmWrap.style,{display:'flex',justifyContent:'flex-start',alignItems:'center',marginBottom:'4px',fontVariantNumeric:'tabular-nums'});
+    const dmInner=document.createElement('div');
+    dmInner.textContent='DMs: ';
+    const dmCount=document.createElement('span');
+    dmCount.id='jvc-dmwalker-dmcount';
+    dmCount.textContent='0';
+    dmCountEl=dmCount;
+    dmInner.appendChild(dmCount);
+    dmWrap.appendChild(dmInner);
+    
     const log=document.createElement('div');
     log.id='jvc-dmwalker-log';
     Object.assign(log.style,{
@@ -1114,7 +1142,7 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
     });
     logEl=log;
 
-    box.append(header,actions,hoursWrap,chronoWrap,log);
+    box.append(header,actions,chronoWrap,dmWrap,log);
 
     const parent=document.body||document.documentElement;
     parent.appendChild(box);
