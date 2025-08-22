@@ -208,29 +208,34 @@
   onCache = await get(STORE_ON,false);
 
   const DEFAULTS = { me:'', cooldownH:96 };
-   // List of known moderators/staff to avoid messaging.
-  // Source: community-maintained blacklist included in commit f2de4f6.
   const HARD_BL = new Set([
-   'moderation51', 'odoki', 'suumas', '[firework]', 'wrondral', 'n-snake16', 'angry_skinny', 'therealmarco',
-   'protestant', 'alvin_stick', 'faunolefaune', 'a-la-peche', 'uossitreza', 'jomak', 'mangas-act', 'clem-du-30',
-   'lasnlleretour', 'ipaname', 'kai-kod', 'n-kingen', 'eiki16', 'endorph[-ine]', 'gabiven', 'antistar', 'krayzel',
-   'ludens', 'jipoupierre', 'odellbeckham', 'gsr-x-perez', 'latios[jv]', 'tomy-fett', 'vortex646', 'remysangfamy',
-   'evilash08', 'leirok', 'wolkade2', 'vykt0r41', 'kamisamabob', 'diz25', 'nalix', 'nombre', 'teetest', 'dantedmc1',
-   'smlennox', 'retr0pl4yer', '[sf]', 'lan78', '[[xou]]', 'gamos', 'linkpa', 'pommephone', 'mistho', 'mrfantastic',
-   'naughtygod', 'shiptari', 'chrysolithe', 'monsieurdebat', 'celuiquiestfor', 'dr_goomba', 'oo-fox-oo', 'rika',
-   'hernandieu', 'drdee', 'cyberhakim', 'kimbo', 'mazda', 'kyo_soma', 'mario86', 'thanhatos', 'tardyl1973',
-   'saiyar', 'georodin', '[sadik]', 'raziel_2007', 'matt44200', 'patou260567', 'y3ti', 'adgjl', 'kingofaesthetic',
-   'allicroco', 'lapintade', 'thymotep', 'godrik', 'lgv', 'dnob700', 'google_bot', 'fatalkill', 'corochi',
-   'zelprod', 'penta_pingouin', 'gus', 'resolution', 'daveuss', 'darcaus', 'ruquierchasseur', 'rams', '[hush]2',
-   'pilou_cs', '-cloud-', 'shinruto93', 'mac-artist', 'mandoulis', 'chimene_azalee', 'aisatsana[102]', 'dieu_me_garde',
-   'paulop', 'hypobowling', 'nargulu', 'psnoffline', 'xofeye78', 'grayhena', 'jordan_peterson', 'foundernoob',
-   'tommy_killer', 'bonbonnedegaz', 'jiti-way', 'talib', 'rewi98', 'adiom', 'myssmelmel', 'mehdiguadi', 'lauchhammer',
-   'hildegarn', 'n-king', 'mugowar', 'tonycannes', 'zavvi', 'claudou28', 'alighieri_dante', 'neofungamer',
-   'blaze', 'ktmzaer', 'gnap_gnap', 'dunkan', '[france77]', 'l_g', 'mano', 'puissancier', 'sangowski', 'asap_sven',
-   'elsa', 'kaaido', 'cartographe', 'yoda_software', 'dakota-47', 'duke3d', 'yamachan', 'hoshikaze', 'kogba',
-   'papipigeon', 'truepatriot', 'guido_', 'smoking_lady', 'hisokaa', 'josc59', 'kisuke4', 's4viem', 'enis-karra',
-   'jigako', 'senkai', 'lion-heart38', '[flolem]', 'chiasse-supreme', 'cthulhus', 'stinger[jv]', 'foun59',
-   'elabosak'
+   'angry_skinny','therealmarco','protestant','alvin_stick','faunolefaune','a-la-peche',
+   'uossitreza','jomak','mangas-act','clem-du-30','lasnlleretour','ipaname',
+   'kai-kod','n-kingen','eiki16','endorph[-ine]','gabiven','antistar',
+   'krayzel','ludens','jipoupierre','odellbeckham','gsr-x-perez','latios[jv]',
+   'tomy-fett','vortex646','remysangfamy','evilash08','leirok','wolkade2',
+   'vykt0r41','kamisamabob','diz25','nalix','nombre','teetest',
+   'dantedmc1','smlennox','retr0pl4yer','[sf]','lan78','[[xou]]',
+   'gamos','linkpa','pommephone','mistho','mrfantastic','naughtygod',
+   'shiptari','chrysolithe','monsieurdebat','celuiquiestfor','dr_goomba','oo-fox-oo',
+   'rika','hernandieu','drdee','cyberhakim','kimbo','mazda',
+   'kyo_soma','mario86','thanhatos','tardyl1973','saiyar','georodin',
+   '[sadik]','raziel_2007','matt44200','patou260567','y3ti','adgjl',
+   'kingofaesthetic','allicroco','lapintade','thymotep','godrik','lgv',
+   'dnob700','google_bot','fatalkill','corochi','zelprod','penta_pingouin',
+   'gus','resolution','daveuss','darcaus','ruquierchasseur','rams',
+   '[hush]2','pilou_cs','-cloud-','shinruto93','mac-artist','mandoulis',
+   'chimene_azalee','aisatsana[102]','dieu_me_garde','paulop','hypobowling','nargulu',
+   'psnoffline','xofeye78','grayhena','jordan_peterson','foundernoob','tommy_killer',
+   'bonbonnedegaz','jiti-way','talib','rewi98','adiom','myssmelmel',
+   'mehdiguadi','lauchhammer','hildegarn','n-king','mugowar','tonycannes',
+   'zavvi','claudou28','alighieri_dante','neofungamer','blaze','ktmzaer',
+   'gnap_gnap','dunkan','[france77]','l_g','mano','puissancier',
+   'sangowski','asap_sven','elsa','kaaido','cartographe','yoda_software',
+   'dakota-47','duke3d','yamachan','hoshikaze','kogba','papipigeon',
+   'truepatriot','guido_','smoking_lady','hisokaa','josc59','kisuke4',
+   's4viem','enis-karra','jigako','senkai','lion-heart38','[flolem]',
+   'chiasse-supreme','cthulhus','stinger[jv]','foun59','elabosak', 'moijemoije'
   ]);
 
   const TITLE_BL = [/mod[ée]ration/i, /r[èe]gles/i];
@@ -271,10 +276,9 @@
     const clean = {};
     let changed = false;
     for (const [p, t] of Object.entries(m)) {
-       const low = p.toLowerCase();
       if (now - t < HRS(cooldownH)) {
-        clean[low] = t;
-        if (low !== p) changed = true;      } else {
+        clean[p] = t;
+      } else {
         changed = true;
       }
     }
@@ -284,37 +288,26 @@
     return clean;
   };
 
-  function myPseudo(){
-    const selectors = [
-      '.headerAccount__pseudo',
-      '.header .pseudo'
-    ];
-    for (const s of selectors){
-      const t = q(s)?.textContent?.trim();
-      if (t) return t;
-    }
-    log('[myPseudo] pseudo not found');
-    return '';
-  }
+  function myPseudo(){ for(const s of ['.headerAccount__pseudo','.header .pseudo','a[href*="/profil/"]']){ const t=q(s)?.textContent?.trim(); if(t) return t; } return ''; }
 
   /* ---------- message templates ---------- */
   const TITLE_TEMPLATES = [
     "Besoin d'aide URGENT","HELP : besoin d'aide","Full RSA besoin d'aide",
     "Aidez moi svp","Besoin d’aide FULL RSA","RSA je meurs","Survivre au RSA"
   ];
-  const TEXT_TEMPLATES = [
-    `MODE SURVIE https://image.noelshack.com/fichiers/2016/36/1473263957-risitas33.pngtqt c'est vraiment connu demande à chatgpt https://image.noelshack.com/fichiers/2016/48/1480465536-1475531584-risitascomplot.png
-J’ai trouvé un "glitch" 100% LEGAL pour GRATTER de l’argent sur tous les sites https://image.noelshack.com/fichiers/2016/38/1474723937-tv9.png`,
+  const TEXT_TEMPLATES = [`MODE SURVIE https://image.noelshack.com/fichiers/2016/36/1473263957-risitas33.png
+tqt c'est vraiment connu demande à chatgpt https://image.noelshack.com/fichiers/2016/48/1480465536-1475531584-risitascomplot.png
+J’ai trouvé un "glitch" 100% LEGAL pour GRATTER de l’argent sur tous les sites https://image.noelshack.com/fichiers/2016/38/1474723937-tv9.png
 
-    `+1000€ économisés depuis que je l'utilise :d) https://www.noelshack.com/2025-34-5-1755868565-82fef769add4fa83b41483178426ef5c.png`,
++1000€ économisés depuis que je l'utilise :d) https://www.noelshack.com/2025-34-5-1755868565-82fef769add4fa83b41483178426ef5c.png
 
-    `IGRAAAAAAAAAAL https://image.noelshack.com/fichiers/2016/30/1469490944-issouuu.jpg
+IGRAAAAAAAAAAL https://image.noelshack.com/fichiers/2016/30/1469490944-issouuu.jpg
 Quand tu commandes :d)  IGRAAL te redirige vers la boutique (amazon, aliexpress, uber eats, sfr, etc) https://image.noelshack.com/fichiers/2016/36/1473263957-risitas33.png
 Le site file une com à IGRAAL pour t’avoir amené comme client :d)  IGRAAL te reverse une partie https://image.noelshack.com/minis/2016/52/1483054124-risitas.png
-3€ à GRATTER lors de l'inscription :d)  https://fr.igraal.com/parrainage?parrain=AG_5ddf42495f191 https://image.noelshack.com/minis/2017/39/3/1506463228-risibg.png`,
+3€ à GRATTER lors de l'inscription :d)  https://fr.igraal.com/parrainage?parrain=AG_5ddf42495f191 https://image.noelshack.com/minis/2017/39/3/1506463228-risibg.png
 
-    `oui je GRATTE aussi 3 balles https://image.noelshack.com/minis/2021/51/4/1640278497-2.png
-C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.com/minis/2019/11/6/1552755294-macronpetitpied2.png`,
+oui je GRATTE aussi 3 balles https://image.noelshack.com/minis/2021/51/4/1640278497-2.png
+C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.com/minis/2019/11/6/1552755294-macronpetitpied2.png`];
 
     const rand32 = () => {
     if (typeof window !== 'undefined' && window.crypto?.getRandomValues) {
@@ -719,10 +712,9 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
     return out;
   }
 
-  if (typeof module !== 'undefined' &&
-      module.exports &&
-      typeof window === 'undefined') {
-      module.exports = { sanitizeURLs, addTrailingSpaces };
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { sanitizeURLs, addTrailingSpaces };
+    return;
   }
 
   /* ---------- robust compact English UI ---------- */
@@ -752,15 +744,7 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
     if(q('#jvc-dmwalker')) return;
 
     const conf = Object.assign({}, DEFAULTS, await loadConf());
-    if(!conf.me){
-      const pseudo = myPseudo();
-      if(pseudo){
-        conf.me = pseudo;
-        await saveConf(conf);
-      } else {
-        log('Pseudo not found');
-      }
-    }
+    if(!conf.me){ conf.me = myPseudo(); await saveConf(conf); }
 
     const box=document.createElement('div');
     box.id='jvc-dmwalker';
@@ -771,55 +755,31 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
       boxShadow:'0 8px 24px rgba(0,0,0,.5)',
       font:'12px/1.4 system-ui,Segoe UI,Roboto,Arial'
     });
-    const header = document.createElement('div');
-    Object.assign(header.style, {display:'flex',alignItems:'center',gap:'8px',marginBottom:'6px'});
-    const title = document.createElement('strong');
-    Object.assign(title.style, {fontSize:'12px',flex:'1'});
-    title.textContent = 'JVC DM WALKER';
-    statusEl = document.createElement('span');
-    statusEl.id = 'jvc-dmwalker-status';
-    statusEl.textContent = 'OFF';
-    Object.assign(statusEl.style, {fontWeight:'700',color:'#bbb'});
-    header.append(title, statusEl);
-
-    const controls = document.createElement('div');
-    Object.assign(controls.style, {display:'flex',alignItems:'center',gap:'8px',margin:'6px 0'});
-    const btnStart = document.createElement('button');
-    btnStart.id = 'jvc-dmwalker-start';
-    btnStart.textContent = 'Start';
-    Object.assign(btnStart.style, {background:'#2a6ef5',border:'0',color:'#fff',padding:'5px 9px',borderRadius:'8px',cursor:'pointer'});
-    const btnStop = document.createElement('button');
-    btnStop.id = 'jvc-dmwalker-stop';
-    btnStop.textContent = 'Stop';
-    Object.assign(btnStop.style, {background:'#8a2020',border:'0',color:'#fff',padding:'5px 9px',borderRadius:'8px',cursor:'pointer'});
-    const btnPurge = document.createElement('button');
-    btnPurge.id = 'jvc-dmwalker-purge';
-    btnPurge.textContent = 'Clear 96h';
-    Object.assign(btnPurge.style, {background:'#333',border:'1px solid #555',color:'#bbb',padding:'5px 9px',borderRadius:'8px',cursor:'pointer'});
-    controls.append(btnStart, btnStop, btnPurge);
-
-    const chronoRow = document.createElement('div');
-    Object.assign(chronoRow.style, {display:'flex',justifyContent:'flex-start',alignItems:'center',marginBottom:'4px',fontVariantNumeric:'tabular-nums'});
-    const chronoWrap = document.createElement('div');
-    chronoWrap.textContent = '⏱ ';
-    chronoEl = document.createElement('span');
-    chronoEl.id = 'jvc-dmwalker-chrono';
-    chronoEl.textContent = '00:00:00';
-    chronoWrap.appendChild(chronoEl);
-    chronoRow.appendChild(chronoWrap);
-
-    logEl = document.createElement('div');
-    logEl.id = 'jvc-dmwalker-log';
-    Object.assign(logEl.style, {
-      marginTop:'2px',color:'#9ecbff',lineHeight:'1.4',height:'5.6em',
-      overflow:'auto',whiteSpace:'pre-wrap',
-      background:'#0b0d12',border:'1px solid #222',borderRadius:'8px',padding:'6px'
-    });
-
-    box.append(header, controls, chronoRow, logEl);
+    box.innerHTML=`
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <strong style="font-size:12px;flex:1;">JVC DM WALKER</strong>
+        <span id="jvc-dmwalker-status" style="font-weight:700;color:#bbb">OFF</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin:6px 0;">
+        <button id="jvc-dmwalker-start" style="background:#2a6ef5;border:0;color:#fff;padding:5px 9px;border-radius:8px;cursor:pointer">Start</button>
+        <button id="jvc-dmwalker-stop"  style="background:#8a2020;border:0;color:#fff;padding:5px 9px;border-radius:8px;cursor:pointer">Stop</button>
+        <button id="jvc-dmwalker-purge" style="background:#333;border:1px solid #555;color:#bbb;padding:5px 9px;border-radius:8px;cursor:pointer">Clear 96h</button>
+      </div>
+      <div style="display:flex;justify-content:flex-start;align-items:center;margin-bottom:4px;font-variant-numeric:tabular-nums">
+        <div>⏱ <span id="jvc-dmwalker-chrono">00:00:00</span></div>
+      </div>
+      <div id="jvc-dmwalker-log" style="
+        margin-top:2px;color:#9ecbff;
+        line-height:1.4;
+        height:5.6em;
+        overflow:auto; white-space:pre-wrap;
+        background:#0b0d12; border:1px solid #222; border-radius:8px; padding:6px;"></div>`;
 
     const parent = document.body || document.documentElement;
     parent.appendChild(box);
+    chronoEl = q('#jvc-dmwalker-chrono');
+    statusEl = q('#jvc-dmwalker-status');
+    logEl = q('#jvc-dmwalker-log');
 
     let b=q('#jvc-dmwalker-badge');
     if(!b){
@@ -847,10 +807,8 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
 
     q('#jvc-dmwalker-start').onclick=async()=>{
       const c=Object.assign({}, DEFAULTS, await loadConf());
-      const pseudo = myPseudo();
-      c.me = pseudo || c.me || '';
+      c.me = myPseudo() || c.me || '';
       await saveConf(c);
-      if(!pseudo) log('Pseudo not found');
       await set(STORE_ON,true);
       onCache = true;
       await sessionStart();
