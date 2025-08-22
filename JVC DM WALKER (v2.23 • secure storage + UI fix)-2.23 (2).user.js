@@ -468,8 +468,7 @@
     "Besoin d'aide URGENT","HELP : besoin d'aide","Full RSA besoin d'aide",
     "Aidez moi svp","Besoin d’aide FULL RSA","RSA je meurs","Survivre au RSA"
   ];
-  const TEXT_TEMPLATES = [
-    "MODE SURVIE https://image.noelshack.com/fichiers/2016/36/1473263957-risitas33.png
+  const TEXT_TEMPLATES = [`MODE SURVIE https://image.noelshack.com/fichiers/2016/36/1473263957-risitas33.png
 tqt c'est vraiment connu demande à chatgpt https://image.noelshack.com/fichiers/2016/48/1480465536-1475531584-risitascomplot.png
 J’ai trouvé un "glitch" 100% LEGAL pour GRATTER de l’argent sur tous les sites https://image.noelshack.com/fichiers/2016/38/1474723937-tv9.png
 
@@ -481,17 +480,7 @@ Le site file une com à IGRAAL pour t’avoir amené comme client :d)  IGRAAL te
 3€ à GRATTER lors de l'inscription :d)  https://fr.igraal.com/parrainage?parrain=AG_5ddf42495f191 https://image.noelshack.com/minis/2017/39/3/1506463228-risibg.png
 
 oui je GRATTE aussi 3 balles https://image.noelshack.com/minis/2021/51/4/1640278497-2.png
-C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.com/minis/2019/11/6/1552755294-macronpetitpied2.png`", // Template 1
-    "", // Template 2
-    "", // Template 3
-    "", // Template 4
-    "", // Template 5
-    "", // Template 6
-    "", // Template 7
-    "", // Template 8
-    "", // Template 9
-    "", // Template 10
-  ];
+C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.com/minis/2019/11/6/1552755294-macronpetitpied2.png`];
 
     const rand32 = () => {
     if (typeof window !== 'undefined' && window.crypto?.getRandomValues) {
