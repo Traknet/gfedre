@@ -235,7 +235,7 @@
    'dakota-47','duke3d','yamachan','hoshikaze','kogba','papipigeon',
    'truepatriot','guido_','smoking_lady','hisokaa','josc59','kisuke4',
    's4viem','enis-karra','jigako','senkai','lion-heart38','[flolem]',
-   'chiasse-supreme','cthulhus','stinger[jv]','foun59','elabosak', 'moijemoije'
+   'chiasse-supreme','cthulhus','stinger[jv]','foun59','elabosak',
   ]);
 
   const TITLE_BL = [/mod[ée]ration/i, /r[èe]gles/i];
