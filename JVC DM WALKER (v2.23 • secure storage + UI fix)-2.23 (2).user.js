@@ -404,18 +404,28 @@
   async function getTargetForum(){ const o=await get(STORE_TARGET_FORUM,null); if(!o) return null; if(NOW()-o.ts>10*60*1000){ await set(STORE_TARGET_FORUM,null); return null; } return o.fid||null; }
   async function clearTargetForum(){ await set(STORE_TARGET_FORUM,null); }
 
-  /* ---------- sent memory ---------- */
+/* ---------- sent memory ---------- */
+  const hashPseudo = async (pseudo) => {
+    const data = new TextEncoder().encode(pseudo.toLowerCase());
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(hashBuffer))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
+  };
   const sentMap = async (cooldownH) => {
     const m = await get(STORE_SENT, {});
     const now = NOW();
     const clean = {};
     let changed = false;
-    for (const [p, t] of Object.entries(m)) {
+    for (const [key, t] of Object.entries(m)) {
+      const h = key.length === 64 ? key : await hashPseudo(key);
       if (now - t < HRS(cooldownH)) {
-        clean[p] = t;
+        clean[h] = t;
       } else {
         changed = true;
       }
+     if (h !== key) changed = true;
+
     }
     if (changed || Object.keys(clean).length !== Object.keys(m).length) {
       await set(STORE_SENT, clean);
@@ -427,13 +437,14 @@
   const selectors=[
     '.headerAccount__pseudo',
     '.account__pseudo',
-    'a.headerAccount__user',
-    'a[href*="/profil/"]'
+    'a.headerAccount__user'
   ];
   for(const sel of selectors){
     const t=q(sel)?.textContent?.trim();
     if(t) return t;
   }
+  const hasSession = document.cookie.includes('md_sid=');
+  log(`Pseudo introuvable${hasSession ? ' — session détectée' : ' — aucune session détectée'}.`);
   return '';
   }
   /* ---------- message templates ---------- */
@@ -632,12 +643,13 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
     const offset = randInt(pool.length);
     for(let k=0;k<pool.length;k++){
       const p = pool[(k+offset)%pool.length];
-      const t = sent[p.toLowerCase()];
+      const key = await hashPseudo(p);
+      const t = sent[key];
       if(t){
         const leftMs = HRS(cfg.cooldownH) - (NOW()-t);
         if(leftMs>0){ log(`skip ${p} — ${formatLeft(leftMs)} left`); continue; }
       }
-      sent[p.toLowerCase()] = NOW();
+      sent[key] = NOW();
       await set(STORE_SENT, sent);
       return p;
     }
