@@ -260,8 +260,8 @@ let chronoEl=null, statusEl=null, logEl=null, dmCountEl=null;
   const STORE_TARGET_FORUM='jvc_mpwalker_target_forum';
 
   let onCache = false;
-let sessionCache = {active:false,startTs:0,stopTs:0,mpCount:0,mpNextDelay:Math.floor(rnd(2,5)),dmSent:0};
-  let sessionCacheLoaded = false;
+let sessionCache = {active:false,startTs:0,stopTs:0,mpCount:0,mpNextDelay:Math.floor(rnd(2,5)),dmSent:0,pendingDm:false};
+let sessionCacheLoaded = false;
   if(typeof GM !== 'undefined' && GM.addValueChangeListener){
     GM.addValueChangeListener(STORE_CONF, async () => {
       try { await loadConf(true); }
@@ -803,6 +803,7 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
     sessionCache.active = true;
     sessionCache.stopTs = 0;
     if(!wasActive) sessionCache.dmSent = 0;
+    if(typeof sessionCache.pendingDm !== 'boolean') sessionCache.pendingDm = false;
     await set(STORE_SESSION, sessionCache);
     startTimerUpdater();
   }
@@ -879,6 +880,9 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
 
     // 1) handle MP first (compose/thread)
     if(isMpThread()){
+      await sessionGet();
+      sessionCache.pendingDm = true;
+      await set(STORE_SESSION, sessionCache);
       let back = await get(STORE_LAST_LIST,'') || pickListWeighted();
       back = normalizeListToPageOne(back);
       log('MP thread detected → back to list.');
@@ -893,6 +897,7 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
         await sessionGet();
         sessionCache.mpCount = (sessionCache.mpCount||0) + 1;
         sessionCache.dmSent = (sessionCache.dmSent||0) + 1;
+        sessionCache.pendingDm = true;
         await updateSessionUI();
         if(!sessionCache.mpNextDelay) sessionCache.mpNextDelay = Math.floor(rnd(2,5));
         if(sessionCache.mpCount >= sessionCache.mpNextDelay){
@@ -969,6 +974,13 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
       }
 
       await set(STORE_LAST_LIST, location.href);
+      await sessionGet();
+      if(sessionCache.pendingDm){
+        sessionCache.dmSent = (sessionCache.dmSent||0) + 1;
+        sessionCache.pendingDm = false;
+        await set(STORE_SESSION, sessionCache);
+        await updateSessionUI();
+      }
       const links=collectTopicLinks();
       if(!links.length){ log('Forum list detected but no usable links.'); tickSoon(800); return; }
       const pick=randomPick(links);
