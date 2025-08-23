@@ -27,6 +27,16 @@
   const rnd=(a,b)=>a+Math.random()*(b-a);
   const human=()=>sleep(Math.round(rnd(49,105)));
   const dwell=(a=350,b=950)=>sleep(Math.round(rnd(a,b)));
+    async function randomScrollWait(min,max){
+    const end = NOW() + Math.round(rnd(min,max));
+    while(NOW() < end){
+      if(Math.random()<0.3){
+        try{ window.scrollBy({top:rnd(-120,120),behavior:'smooth'}); }
+        catch(e){ console.error('[randomScrollWait]', e); }
+      }
+      await dwell(400,1200);
+    }
+  }
   async function randomScrollWait(min,max){
     const end = NOW() + Math.round(rnd(min,max));
     while(NOW() < end){
@@ -792,6 +802,7 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
     if(!sessionCache.active || !sessionCache.startTs) sessionCache.startTs = NOW();
     sessionCache.active = true;
     sessionCache.stopTs = 0;
+    sessionCache.dmSent = 0;
     if(!wasActive) sessionCache.dmSent = 0;
     await set(STORE_SESSION, sessionCache);
     startTimerUpdater();
