@@ -893,6 +893,7 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
         await sessionGet();
         sessionCache.mpCount = (sessionCache.mpCount||0) + 1;
         sessionCache.dmSent = (sessionCache.dmSent||0) + 1;
+        await updateSessionUI();
         if(!sessionCache.mpNextDelay) sessionCache.mpNextDelay = Math.floor(rnd(2,5));
         if(sessionCache.mpCount >= sessionCache.mpNextDelay){
           const ms = Math.round(rnd(30000,120000));
