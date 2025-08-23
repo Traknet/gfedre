@@ -637,7 +637,7 @@ let sessionCache = {active:false,startTs:0,stopTs:0,mpCount:0,mpNextDelay:Math.f
       return true;
     }
     if(g.tries>=3){ await set(STORE_NAV_GUARD,{href:targetHref,tries:g.tries,ts:now}); log(`[Last] Abort after ${g.tries} tries`); return false; }
-    await set(STORE_NAV_GUARD,{href:targetHref,tries=g.tries+1,ts:now});
+    await set(STORE_NAV_GUARD,{href:targetHref,tries:g.tries+1,ts:now});
     return true;
   }
   async function ensureAtLastPage(){
