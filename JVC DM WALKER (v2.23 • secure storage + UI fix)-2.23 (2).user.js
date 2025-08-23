@@ -4,6 +4,7 @@
 // @version      2.23
 // @description  Last page via max-number → true random user → 96h cooldown → MP all_dest. Compose-first, compact EN UI, forum scope (18-25 & Finance, 85/15), cooldown-left logs, human-like scroll/hover. Forum lists forced to page 1. URLs in message are pasted (not typed). UI mounting robust & private storage.
 // @match        *://*.jeuxvideo.com/*
+// @match        *://forum.hardware.fr/*
 // @run-at       document-end
 // @grant        GM.getValue
 // @grant        GM.setValue
@@ -27,38 +28,7 @@
   const rnd=(a,b)=>a+Math.random()*(b-a);
   const human=()=>sleep(Math.round(rnd(49,105)));
   const dwell=(a=350,b=950)=>sleep(Math.round(rnd(a,b)));
-    async function randomScrollWait(min,max){
-    if (min >= max) [min, max] = [max, min];
-    min = Math.max(min, 0);
-    const end = NOW() + Math.round(rnd(min,max));
-    while(NOW() < end){
-      if(Math.random()<0.3){
-        try{ window.scrollBy({top:rnd(-120,120),behavior:'smooth'}); }
-        catch(e){ console.error('[randomScrollWait]', e); }
-      }
-      await dwell(400,1200);
-    }
-  }
   async function randomScrollWait(min,max){
-  if (min >= max) [min, max] = [max, min];
-    min = Math.max(min, 0);
-    const end = NOW() + Math.round(rnd(min,max));
-    while(NOW() < end){
-      if(Math.random()<0.3){
-        try{ window.scrollBy({top:rnd(-120,120),behavior:'smooth'}); }
-        catch(e){ console.error('[randomScrollWait]', e); }
-      }
-      await dwell(400,1200);
-    }
-  }
- /**
-  * Attend une durée aléatoire entre `min` et `max` en simulant des scrolls.
-  * Si `min >= max`, les valeurs sont permutées pour garantir un intervalle valide.
-  * Le paramètre `min` est borné à `0` pour éviter les valeurs négatives.
-  */
- async function randomScrollWait(min,max){
-    if (min >= max) [min, max] = [max, min];
-    min = Math.max(min, 0);
     const end = NOW() + Math.round(rnd(min,max));
     while(NOW() < end){
       if(Math.random()<0.3){
@@ -72,6 +42,7 @@
   const qa=(s,r=document)=>Array.from(r.querySelectorAll(s));
   const NOW=()=>Date.now(), HRS=h=>h*3600e3;
   const ORIG=typeof location !== 'undefined' ? location.origin : '';
+  const IS_HFR=typeof location !== 'undefined' && /forum\.hardware\.fr$/.test(location.host);
 
 let chronoEl=null, statusEl=null, logEl=null, dmCountEl=null;
 
@@ -112,7 +83,6 @@ let chronoEl=null, statusEl=null, logEl=null, dmCountEl=null;
         statusEl=null;
         logEl=null;
         dmCountEl=null;
-
     }
     window.addEventListener('unload', cleanupUI);
   }
@@ -226,14 +196,20 @@ let chronoEl=null, statusEl=null, logEl=null, dmCountEl=null;
   }
 
   /* ---------- detectors ---------- */
-  const isCompose  = ()=> /\/messages-prives\/nouveau\.php/i.test(location.pathname+location.search);
-  const isMpThread = ()=> /\/messages-prives\/message\.php/i.test(location.pathname);
+  const isCompose  = ()=> IS_HFR ? /message\.php.*cat=prive/i.test(location.href) : /\/messages-prives\/nouveau\.php/i.test(location.pathname+location.search);
+  const isMpThread = ()=> IS_HFR ? /message\.php.*cat=prive.*(?:post=|numreponse=)/i.test(location.href) : /\/messages-prives\/message\.php/i.test(location.pathname);
   function isTopicPage(){
+    if(IS_HFR){
+      return /\/hfr\/.*\/topic_\d+_\d+\.htm$/i.test(location.pathname);
+    }
     if(!/\/forums\//i.test(location.pathname)) return false;
     if(qa('.bloc-message-forum').length>0) return true;
     return !!q('#forum-main-col .conteneur-message .bloc-header');
   }
   function isForumList(){
+    if(IS_HFR){
+      return /\/hfr\/.*\/(?:liste_sujet|sujet)_\d+\.htm$/i.test(location.pathname);
+    }
     if(!/\/forums\//i.test(location.pathname)) return false;
     if(isTopicPage()) return false;
     return true;
@@ -258,8 +234,8 @@ let chronoEl=null, statusEl=null, logEl=null, dmCountEl=null;
   const STORE_TARGET_FORUM='jvc_mpwalker_target_forum';
 
   let onCache = false;
-let sessionCache = {active:false,startTs:0,stopTs:0,mpCount:0,mpNextDelay:Math.floor(rnd(2,5)),dmSent:0,pendingDm:false};
-let sessionCacheLoaded = false;
+let sessionCache = {active:false,startTs:0,stopTs:0,mpCount:0,mpNextDelay:Math.floor(rnd(2,5)),dmSent:0};
+  let sessionCacheLoaded = false;
   if(typeof GM !== 'undefined' && GM.addValueChangeListener){
     GM.addValueChangeListener(STORE_CONF, async () => {
       try { await loadConf(true); }
@@ -271,7 +247,7 @@ let sessionCacheLoaded = false;
   }
   onCache = await get(STORE_ON,false);
 
-  const DEFAULTS = { me:'', cooldownH:96, activeHours:[8,23] };
+  const DEFAULTS = { me:'', cooldownH:96, activeHours:[0,24] };
   // Source: hard blacklist provided by the DM Walker community
   // Last updated: 2025-08-22
   const HARD_BL = new Set([
@@ -516,19 +492,18 @@ let sessionCacheLoaded = false;
     "Besoin d'aide URGENT","HELP : besoin d'aide","Full RSA besoin d'aide",
     "Aidez moi svp","Besoin d’aide FULL RSA","RSA je meurs","Survivre au RSA"
   ];
-  const TEXT_TEMPLATES = [`MODE SURVIE https://image.noelshack.com/fichiers/2016/36/1473263957-risitas33.png
-tqt c'est vraiment connu demande à chatgpt https://image.noelshack.com/fichiers/2016/48/1480465536-1475531584-risitascomplot.png
-J’ai trouvé un "glitch" 100% LEGAL pour GRATTER de l’argent sur tous les sites https://image.noelshack.com/fichiers/2016/38/1474723937-tv9.png
-
-+1000€ économisés depuis que je l'utilise :d) https://www.noelshack.com/2025-34-5-1755868565-82fef769add4fa83b41483178426ef5c.png
-
-IGRAAAAAAAAAAL https://image.noelshack.com/fichiers/2016/30/1469490944-issouuu.jpg
-Quand tu commandes :d)  IGRAAL te redirige vers la boutique (amazon, aliexpress, uber eats, sfr, etc) https://image.noelshack.com/fichiers/2016/36/1473263957-risitas33.png
-Le site file une com à IGRAAL pour t’avoir amené comme client :d)  IGRAAL te reverse une partie https://image.noelshack.com/minis/2016/52/1483054124-risitas.png
-3€ à GRATTER lors de l'inscription :d)  https://fr.igraal.com/parrainage?parrain=AG_5ddf42495f191 https://image.noelshack.com/minis/2017/39/3/1506463228-risibg.png
-
-oui je GRATTE aussi 3 balles https://image.noelshack.com/minis/2021/51/4/1640278497-2.png
-C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.com/minis/2019/11/6/1552755294-macronpetitpied2.png`];
+  const TEXT_TEMPLATES = [
+    "", // Template 1
+    "", // Template 2
+    "", // Template 3
+    "", // Template 4
+    "", // Template 5
+    "", // Template 6
+    "", // Template 7
+    "", // Template 8
+    "", // Template 9
+    "", // Template 10
+  ];
 
     const rand32 = () => {
     if (typeof window !== 'undefined' && window.crypto?.getRandomValues) {
@@ -561,22 +536,22 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
   }
   function generateMessage(){
     const subject = randomPick(TITLE_TEMPLATES) || '';
-    const raw = sanitizeURLs(randomPick(TEXT_TEMPLATES) || '');
-    const message = addTrailingSpaces(raw);
-    if(!message.trim()){
-    }
+    const message = addTrailingSpaces(sanitizeURLs(randomPick(TEXT_TEMPLATES) || ''));
     return { subject, message };
   }
   function buildPersonalizedMessage(pseudo){
-    const generated = generateMessage();
-    if(!generated){ return null; }
-    const { subject, message } = generated;
+    const { subject, message } = generateMessage();
     const safePseudo = pseudo || "";
     return { subject, message: message.split("{pseudo}").join(safePseudo) };
   }
 
   /* ---------- URL helpers + forum-list page parsing ---------- */
   function getTopicInfoFromPath(pathname){
+    if(IS_HFR){
+      const m = pathname.match(/\/hfr\/.*\/topic_(\d+)_(\d+)\.htm/i);
+      if(!m) return {forumId:null, topicId:null, page:NaN};
+      return {forumId:null, topicId:m[1], page:+m[2]};
+    }
     const m = pathname.match(/\/forums\/\d+-(\d+)-(\d+)-(\d+)-\d+-\d+-.*\.htm/i);
     if(!m) return {forumId:null, topicId:null, page:NaN};
     return {forumId:m[1], topicId:m[2], page:+m[3]};
@@ -588,6 +563,11 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
   function currentTopicInfo(){ return getTopicInfoFromPath(location.pathname); }
 
   function getListInfoFromPath(pathname, search){
+    if(IS_HFR){
+      const m = pathname.match(/\/hfr\/.*\/(?:liste_sujet|sujet)_([0-9]+)\.htm/i);
+      const page = m ? parseInt(m[1],10) : NaN;
+      return {fid:null, page};
+    }
     const m = pathname.match(/\/forums\/0-(\d+)-0-(\d+)-\d+-\d+-\d+-/i);
     const fid = m ? m[1] : null;
     let page = m ? parseInt(m[2],10) : NaN;
@@ -597,6 +577,7 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
   }
   function listForumIdFromPath(pathname){ return getListInfoFromPath(pathname, location.search).fid; }
   function pageIsAllowed(){
+    if(IS_HFR) return true;
     if(isTopicPage()){
       const {forumId}=currentTopicInfo();
       return forumId && ALLOWED_FORUMS.has(forumId);
@@ -620,6 +601,17 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
 
   /* ---------- pagination : max-number (same topicId) ---------- */
   function findMaxPageLinkForCurrentTopic(){
+    if(IS_HFR){
+      let best={el:null,num:NaN,abs:null};
+      const anchors=qa('.toolbar.bottom a');
+      for(const a of anchors){
+        const n=parseInt((a.textContent||'').trim(),10);
+        if(!isNaN(n) && (isNaN(best.num) || n>best.num)){
+          best={el:a,num:n,abs:a.href};
+        }
+      }
+      return best;
+    }
     const {topicId} = currentTopicInfo();
     if(!topicId) return {el:null, num:NaN, abs:null};
     let best={el:null,num:NaN,abs:null};
@@ -645,7 +637,7 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
       return true;
     }
     if(g.tries>=3){ await set(STORE_NAV_GUARD,{href:targetHref,tries:g.tries,ts:now}); log(`[Last] Abort after ${g.tries} tries`); return false; }
-    await set(STORE_NAV_GUARD,{href:targetHref,tries:g.tries+1,ts:now});
+    await set(STORE_NAV_GUARD,{href:targetHref,tries=g.tries+1,ts:now});
     return true;
   }
   async function ensureAtLastPage(){
@@ -674,17 +666,23 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
   function uniquePseudosOnPage(cfg){
     const me=(cfg.me||'').toLowerCase();
     const uniq=new Map();
-    for(const post of qa('.bloc-message-forum')){
+    const posts = IS_HFR ? qa('.message') : qa('.bloc-message-forum');
+    for(const post of posts){
       let pseudo='';
-      const dataPseudo = post.getAttribute('data-pseudo') || post.dataset?.pseudo;
-      if(dataPseudo) pseudo = dataPseudo.trim();
-      if(!pseudo){
-        const link = post.querySelector('.bloc-pseudo-msg a[href*="/profil/"], a[href*="/profil/"]');
+      if(IS_HFR){
+        const link = post.querySelector('.Auteur a');
         pseudo = (link?.textContent||'').trim();
-      }
-      if(!pseudo){
-        const node = post.querySelector('.bloc-pseudo-msg');
-        pseudo = (node?.textContent||'').trim();
+      } else {
+        const dataPseudo = post.getAttribute('data-pseudo') || post.dataset?.pseudo;
+        if(dataPseudo) pseudo = dataPseudo.trim();
+        if(!pseudo){
+          const link = post.querySelector('.bloc-pseudo-msg a[href*="/profil/"], a[href*="/profil/"]');
+          pseudo = (link?.textContent||'').trim();
+        }
+        if(!pseudo){
+          const node = post.querySelector('.bloc-pseudo-msg');
+          pseudo = (node?.textContent||'').trim();
+        }
       }
       if(!pseudo) continue;
       const low=pseudo.toLowerCase();
@@ -743,25 +741,20 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
       q('#destinataires .form-control-tag .label')?.childNodes?.[0]?.nodeValue?.trim() ||
       (qa('#destinataires input[name^="participants["]').map(i=>i.value)[0]??'') || '';
 
-    const generated = buildPersonalizedMessage(pseudo);
-    if(!generated){
-      log('Empty message generated → skipping send.');
-      return { ok:false, reason:'empty message' };
-    }
-    const { subject, message } = generated;
-    
+    const { subject, message } = buildPersonalizedMessage(pseudo);
+
     const titre = q('#conv_titre, input[name="conv_titre"], input[placeholder*="sujet" i]');
     if(titre){ await human(); setVal(titre,''); await typeHuman(titre, subject||''); }
 
-    let zone = q('textarea[name="message"]') || q('.jv-editor [contenteditable="true"]');
+    let zone = q('textarea[name="message"], textarea[name="content"], #content') || q('.jv-editor [contenteditable="true"]');
     if(!zone){
       const form=q('form.js-form-post-mp')||q('form');
-      if(form && !q('textarea[name="message"]',form)){ const ta=document.createElement('textarea'); ta.name='message'; ta.style.display='none'; form.appendChild(ta); zone=ta; }
+      if(form && !q('textarea[name="message"], textarea[name="content"], #content',form)){ const ta=document.createElement('textarea'); ta.name=IS_HFR?'content':'message'; ta.style.display='none'; form.appendChild(ta); zone=ta; }
     }
     if(zone){ await human(); setValue(zone,''); await typeMixed(zone, message||''); }
 
     await dwell(800,1400);
-    q('.btn.btn-poster-msg.js-post-message, button[type="submit"]')?.click();
+    q('.btn.btn-poster-msg.js-post-message, button[type="submit"], input[type="submit"]')?.click();
     await sleep(1200);
 
     if (isBannedError()){
@@ -795,12 +788,10 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
       await updateSessionUI();
       return;
     }
-    const wasActive = sessionCache.active;
     if(!sessionCache.active || !sessionCache.startTs) sessionCache.startTs = NOW();
     sessionCache.active = true;
     sessionCache.stopTs = 0;
-    if(!wasActive) sessionCache.dmSent = 0;
-    if(typeof sessionCache.pendingDm !== 'boolean') sessionCache.pendingDm = false;
+    sessionCache.dmSent = 0;
     await set(STORE_SESSION, sessionCache);
     startTimerUpdater();
   }
@@ -836,12 +827,6 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
       }
       if(!dmCountEl) dmCountEl = q('#jvc-dmwalker-dmcount');
       if(dmCountEl) dmCountEl.textContent = String(s.dmSent||0);
-      
-      const c = Object.assign({}, DEFAULTS, await loadConf());
-      const startEl = q('#jvc-dmwalker-active-start');
-      if(startEl) startEl.value = c.activeHours[0];
-      const endEl = q('#jvc-dmwalker-active-end');
-      if(endEl) endEl.value = c.activeHours[1];
     } finally {
       updating = false;
     }
@@ -854,7 +839,7 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
   /* ---------- scheduler ---------- */
   async function tickSoon(ms=300){
     const cfg = Object.assign({}, DEFAULTS, await loadConf());
-    const [startHour,endHour]=cfg.activeHours;
+    const [startHour,endHour]=cfg.activeHours||[8,23];
     const now=new Date();
     const h=now.getHours();
     if(h<startHour||h>=endHour){
@@ -872,130 +857,177 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
     if (ticking) return;
     ticking = true;
     try {
-    if(!onCache) return;
-    const cfg = Object.assign({}, DEFAULTS, await loadConf());
+      if(!onCache) return;
+      const cfg = Object.assign({}, DEFAULTS, await loadConf());
 
-    // 1) handle MP first (compose/thread)
-    if(isMpThread()){
-      await sessionGet();
-      sessionCache.pendingDm = true;
-      await set(STORE_SESSION, sessionCache);
-      let back = await get(STORE_LAST_LIST,'') || pickListWeighted();
-      back = normalizeListToPageOne(back);
-      log('MP thread detected → back to list.');
-      await dwell(200,600); location.href=back; tickSoon(300); return;
-    }
-
-    if(isCompose()){
-      log('Compose detected → sending…');
-      const res=await handleCompose(cfg);
-      if(res.ok){
-        log('MP sent.');
-        await sessionGet();
-        sessionCache.mpCount = (sessionCache.mpCount||0) + 1;
-        sessionCache.dmSent = (sessionCache.dmSent||0) + 1;
-        sessionCache.pendingDm = true;
-        await updateSessionUI();
-        if(!sessionCache.mpNextDelay) sessionCache.mpNextDelay = Math.floor(rnd(2,5));
-        if(sessionCache.mpCount >= sessionCache.mpNextDelay){
-          const ms = Math.round(rnd(30000,120000));
-          log(`MP limit reached (${sessionCache.mpCount}) → sleeping ${Math.round(ms/1000)}s.`);
-          await sleep(ms);
-          sessionCache.mpCount = 0;
-          sessionCache.mpNextDelay = Math.floor(rnd(2,5));
+      if(IS_HFR){
+        if(isMpThread()){
+          let back = await get(STORE_LAST_LIST,'') || '/';
+          await dwell(200,600); location.href=back; tickSoon(300); return;
         }
-        await set(STORE_SESSION, sessionCache);
-        await updateSessionUI();
-      }else{
-        log(`Send failed / skipped${res.reason?` (${res.reason})`:''}.`);
+
+        if(isCompose()){
+          log('Compose detected → sending…');
+          const res=await handleCompose(cfg);
+          if(res.ok){
+            log('MP sent.');
+            await sessionGet();
+            sessionCache.mpCount = (sessionCache.mpCount||0) + 1;
+            sessionCache.dmSent = (sessionCache.dmSent||0) + 1;
+            if(!sessionCache.mpNextDelay) sessionCache.mpNextDelay = Math.floor(rnd(2,5));
+            if(sessionCache.mpCount >= sessionCache.mpNextDelay){
+              const ms = Math.round(rnd(30000,120000));
+              log(`MP limit reached (${sessionCache.mpCount}) → sleeping ${Math.round(ms/1000)}s.`);
+              await sleep(ms);
+              sessionCache.mpCount = 0;
+              sessionCache.mpNextDelay = Math.floor(rnd(2,5));
+            }
+            await set(STORE_SESSION, sessionCache);
+          }else{
+            log(`Send failed / skipped${res.reason?` (${res.reason})`:''}.`);
+          }
+
+          let back = await get(STORE_LAST_LIST,'') || '/';
+          await dwell(200,500); location.href=back; tickSoon(300); return;
+        }
+
+        if(isTopicPage()){
+          const atLast = await ensureAtLastPage();
+          if(!atLast){ tickSoon(400); return; }
+          await randomScrollWait(2000,4000);
+          const pseudo=await pickRandomEligiblePseudo(cfg, 6000);
+          if(!pseudo){ log('No eligible user (cooldown/blacklist). Back to list.'); history.back(); return; }
+
+          log(`Chosen random target → ${pseudo}`);
+          await dwell(400,1200);
+          const url=`${ORIG}/message.php?config=hfr.inc&cat=prive&dest=${encodeURIComponent(pseudo)}`;
+          location.href=url; return;
+        }
+
+        if(isForumList()){
+          await set(STORE_LAST_LIST, location.href);
+          const links=collectTopicLinks();
+          if(!links.length){ log('Forum list detected but no usable links.'); tickSoon(800); return; }
+          const pick=randomPick(links);
+          log(`Open topic → ${(pick.textContent||'').trim().slice(0,80)}`);
+          await humanHover(pick);
+          pick.setAttribute('target','_self'); pick.click();
+          return;
+        }
+
+        return;
       }
 
-      let back = await get(STORE_LAST_LIST,'') || pickListWeighted();
-      back = normalizeListToPageOne(back);
-      await dwell(200,500); location.href=back; tickSoon(300); return;
-    }
+      // Original JVC flow
+      // 1) handle MP first (compose/thread)
+      if(isMpThread()){
+        let back = await get(STORE_LAST_LIST,'') || pickListWeighted();
+        back = normalizeListToPageOne(back);
+        log('MP thread detected → back to list.');
+        await dwell(200,600); location.href=back; tickSoon(300); return;
+      }
 
-    // 2) enforce forum scope with weighted target
-    if(!pageIsAllowed()){
+      if(isCompose()){
+        log('Compose detected → sending…');
+        const res=await handleCompose(cfg);
+        if(res.ok){
+          log('MP sent.');
+          await sessionGet();
+          sessionCache.mpCount = (sessionCache.mpCount||0) + 1;
+          sessionCache.dmSent = (sessionCache.dmSent||0) + 1;
+          if(!sessionCache.mpNextDelay) sessionCache.mpNextDelay = Math.floor(rnd(2,5));
+          if(sessionCache.mpCount >= sessionCache.mpNextDelay){
+            const ms = Math.round(rnd(30000,120000));
+            log(`MP limit reached (${sessionCache.mpCount}) → sleeping ${Math.round(ms/1000)}s.`);
+            await sleep(ms);
+            sessionCache.mpCount = 0;
+            sessionCache.mpNextDelay = Math.floor(rnd(2,5));
+          }
+          await set(STORE_SESSION, sessionCache);
+        }else{
+          log(`Send failed / skipped${res.reason?` (${res.reason})`:''}.`);
+        }
+
+        let back = await get(STORE_LAST_LIST,'') || pickListWeighted();
+        back = normalizeListToPageOne(back);
+        await dwell(200,500); location.href=back; tickSoon(300); return;
+      }
+
+      // 2) enforce forum scope with weighted target
+      if(!pageIsAllowed()){
+        const fid = pickForumIdWeighted(); await setTargetForum(fid);
+        const target = FORUMS[fid].list;
+        log(`Outside allowed forums → redirecting to ${FORUMS[fid].name} (page 1).`);
+        location.href=target; return;
+      }
+
+      // 3) standard flow
+      if(isTopicPage()){
+        const {forumId}=currentTopicInfo();
+        if(!ALLOWED_FORUMS.has(forumId)){ const fid = pickForumIdWeighted(); await setTargetForum(fid); location.href=FORUMS[fid].list; return; }
+        const title=(q('#bloc-title-forum')?.textContent||'').trim();
+        if(title && TITLE_BL.some(r=>r.test(title))){ log(`Blacklisted topic (“${title}”) → back.`); history.back(); return; }
+
+        const atLast = await ensureAtLastPage();
+        if(!atLast){ tickSoon(400); return; }
+        await randomScrollWait(2000,4000);
+        const pseudo=await pickRandomEligiblePseudo(cfg, 6000);
+        if(!pseudo){ log('No eligible user (cooldown/blacklist). Back to list.'); history.back(); return; }
+
+        log(`Chosen random target → ${pseudo}`);
+        await dwell(400,1200);
+        try{
+          const msg=q('.bloc-message-forum');
+          if(msg) await humanHover(msg);
+          else window.scrollBy({top:rnd(-120,120),behavior:'smooth'});
+        }catch(e){ console.error('[nav mimic]', e); }
+        const url=`${ORIG}/messages-prives/nouveau.php?all_dest=${encodeURIComponent(pseudo)}`;
+        location.href=url;
+        return;
+      }
+
+      if(isForumList()){
+        const info = getListInfoFromPath(location.pathname, location.search);
+        if(info.fid && info.page && info.page !== 1){
+          const url = forumListPageOneURL(info.fid);
+          log(`List on page ${info.page} → forcing page 1.`);
+          location.href = url; return;
+        }
+
+        let targetF = await getTargetForum();
+        const currentF = info.fid;
+        if(!targetF){
+          targetF = pickForumIdWeighted();
+          await setTargetForum(targetF);
+          log(`Forum target: ${FORUMS[targetF].name} (weighted)`);
+        }
+        if(currentF !== targetF){
+          log(`Switching to ${FORUMS[targetF].name} (weighted target, page 1).`);
+          location.href = FORUMS[targetF].list; return;
+        }
+
+        await set(STORE_LAST_LIST, location.href);
+        const links=collectTopicLinks();
+        if(!links.length){ log('Forum list detected but no usable links.'); tickSoon(800); return; }
+        const pick=randomPick(links);
+        log(`Open topic → ${(pick.textContent||'').trim().slice(0,80)}`);
+        await humanHover(pick);
+        await clearTargetForum();
+        pick.setAttribute('target','_self'); pick.click();
+        return;
+      }
+
+      // fallback: jump to weighted list (page 1)
       const fid = pickForumIdWeighted(); await setTargetForum(fid);
-      const target = FORUMS[fid].list;
-      log(`Outside allowed forums → redirecting to ${FORUMS[fid].name} (page 1).`);
-      location.href=target; return;
-    }
-
-    // 3) standard flow
-    if(isTopicPage()){
-      const {forumId}=currentTopicInfo();
-      if(!ALLOWED_FORUMS.has(forumId)){ const fid = pickForumIdWeighted(); await setTargetForum(fid); location.href=FORUMS[fid].list; return; }
-      const title=(q('#bloc-title-forum')?.textContent||'').trim();
-      if(title && TITLE_BL.some(r=>r.test(title))){ log(`Blacklisted topic (“${title}”) → back.`); history.back(); return; }
-
-      const atLast = await ensureAtLastPage();
-      await dwell(800,2000);
-      await randomScrollWait(3000,7000);
-      await randomScrollWait(2000,6000);
-      await randomScrollWait(2000,4000);
-      const pseudo=await pickRandomEligiblePseudo(cfg, 6000);
-      if(!pseudo){ log('No eligible user (cooldown/blacklist). Back to list.'); history.back(); return; }
-
-      log(`Chosen random target → ${pseudo}`);
-      await dwell(400,1200);
-      try{
-        const msg=q('.bloc-message-forum');
-        if(msg) await humanHover(msg);
-        else window.scrollBy({top:rnd(-120,120),behavior:'smooth'});
-      }catch(e){ console.error('[nav mimic]', e); }
-      const url=`${ORIG}/messages-prives/nouveau.php?all_dest=${encodeURIComponent(pseudo)}`;
-      location.href=url;
-      return;
-    }
-
-    if(isForumList()){
-      const info = getListInfoFromPath(location.pathname, location.search);
-      if(info.fid && info.page && info.page !== 1){
-        const url = forumListPageOneURL(info.fid);
-        log(`List on page ${info.page} → forcing page 1.`);
-        location.href = url; return;
-      }
-
-      let targetF = await getTargetForum();
-      const currentF = info.fid;
-      if(!targetF){
-        targetF = pickForumIdWeighted();
-        await setTargetForum(targetF);
-        log(`Forum target: ${FORUMS[targetF].name} (weighted)`);
-      }
-      if(currentF !== targetF){
-        log(`Switching to ${FORUMS[targetF].name} (weighted target, page 1).`);
-        location.href = FORUMS[targetF].list; return;
-      }
-
-      await set(STORE_LAST_LIST, location.href);
-      await sessionGet();
-      if(sessionCache.pendingDm){
-        sessionCache.dmSent = (sessionCache.dmSent||0) + 1;
-        sessionCache.pendingDm = false;
-        await set(STORE_SESSION, sessionCache);
-        await updateSessionUI();
-      }
-      const links=collectTopicLinks();
-      if(!links.length){ log('Forum list detected but no usable links.'); tickSoon(800); return; }
-      const pick=randomPick(links);
-      log(`Open topic → ${(pick.textContent||'').trim().slice(0,80)}`);
-      await humanHover(pick);
-      await clearTargetForum();
-      pick.setAttribute('target','_self'); pick.click();
-      return;
-    }
-
-    // fallback: jump to weighted list (page 1)
-    const fid = pickForumIdWeighted(); await setTargetForum(fid);
-    location.href=FORUMS[fid].list;
+      location.href=FORUMS[fid].list;
     } finally { ticking = false; }
 
   }
 
   function collectTopicLinks(){
+    if(IS_HFR){
+      return qa('td.sujetCase3 a');
+    }
     const nodes=qa('#forum-main-col a[href*="/forums/"][href$=".htm"], .liste-sujets a[href*="/forums/"][href$=".htm"]');
     const out=[], seen=new Set();
     for(const a of nodes){
@@ -1037,18 +1069,15 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
     }, 700);    if(onCache) tickSoon(400);
   })();
 
-  async function startHandler(){
+    async function startHandler(){
     const c=Object.assign({}, DEFAULTS, await loadConf());
-    const pseudo = myPseudo();
-    if(!pseudo){
-      log('Pseudo introuvable — démarrage annulé.');
-      return;
-    }
-    const startEl=q('#jvc-dmwalker-active-start');
-    const endEl=q('#jvc-dmwalker-active-end');
-    const start=parseInt(startEl?startEl.value:c.activeHours[0],10);
-    const end=parseInt(endEl?endEl.value:c.activeHours[1],10);
-    await saveConf({ ...c, me:pseudo, activeHours:[start,end] });
+      const pseudo = myPseudo();
+      if(!pseudo){
+        log('Pseudo introuvable — démarrage annulé.');
+        return;
+      }
+      c.me = pseudo;
+    await saveConf(c);
     await set(STORE_ON,true);
     onCache = true;
     await sessionStart();
@@ -1121,38 +1150,28 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
     stopBtn.addEventListener('click', stopHandler);
     purgeBtn.addEventListener('click', purgeHandler);
 
-    const hoursWrap=document.createElement('div');
-    Object.assign(hoursWrap.style,{display:'flex',alignItems:'center',gap:'4px',margin:'6px 0'});
-    const hoursLabel=document.createElement('span');
-    hoursLabel.textContent='Heures actives';
-    const startInput=document.createElement('input');
-    startInput.type='number';
-    startInput.id='jvc-dmwalker-active-start';
-    startInput.value=conf.activeHours[0];
-    startInput.min='0'; startInput.max='24';
-    Object.assign(startInput.style,{width:'40px',background:'#0b0d12',color:'#eee',border:'1px solid #222',borderRadius:'4px'});
-    const endInput=document.createElement('input');
-    endInput.type='number';
-    endInput.id='jvc-dmwalker-active-end';
-    endInput.value=conf.activeHours[1];
-    endInput.min='0'; endInput.max='24';
-    Object.assign(endInput.style,{width:'40px',background:'#0b0d12',color:'#eee',border:'1px solid #222',borderRadius:'4px'});
-    hoursWrap.append(hoursLabel,startInput,endInput);
-    
     const chronoWrap=document.createElement('div');
-    Object.assign(chronoWrap.style,{display:'flex',alignItems:'center',gap:'4px',marginBottom:'4px',fontVariantNumeric:'tabular-nums'});
-    const chronoLabel=document.createElement('span');
-    chronoLabel.textContent='⏱';
+    Object.assign(chronoWrap.style,{display:'flex',justifyContent:'flex-start',alignItems:'center',marginBottom:'4px',fontVariantNumeric:'tabular-nums'});
+    const chronoInner=document.createElement('div');
+    chronoInner.textContent='⏱ ';
     const chrono=document.createElement('span');
     chrono.id='jvc-dmwalker-chrono';
     chrono.textContent='00:00:00';
     chronoEl=chrono;
+    chronoInner.appendChild(chrono);
+    chronoWrap.appendChild(chronoInner);
+
+    const dmWrap=document.createElement('div');
+    Object.assign(dmWrap.style,{display:'flex',justifyContent:'flex-start',alignItems:'center',marginBottom:'4px',fontVariantNumeric:'tabular-nums'});
+    const dmInner=document.createElement('div');
+    dmInner.textContent='DMs: ';
     const dmCount=document.createElement('span');
     dmCount.id='jvc-dmwalker-dmcount';
     dmCount.textContent='0';
     dmCountEl=dmCount;
-    chronoWrap.append(chronoLabel, chrono, document.createTextNode(' | DMs: '), dmCount);
-    
+    dmInner.appendChild(dmCount);
+    dmWrap.appendChild(dmInner);
+
     const log=document.createElement('div');
     log.id='jvc-dmwalker-log';
     Object.assign(log.style,{
@@ -1162,7 +1181,7 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
     });
     logEl=log;
 
-    box.append(header,actions,hoursWrap,chronoWrap,log);
+    box.append(header,actions,chronoWrap,dmWrap,log);
 
     const parent=document.body||document.documentElement;
     parent.appendChild(box);
@@ -1189,10 +1208,12 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
       document.addEventListener('keydown', toggleKeyHandler);
     }
 
-    if((await sessionGet()).active) {
+    if((await sessionGet()).active){
       startTimerUpdater();
-      tickSoon();
-    } else await updateSessionUI();
+      tickSoon(250);
+    } else {
+      await updateSessionUI();
+    }
 
     uiMutationObserver = new MutationObserver(()=>{
       if(!parent.contains(box)){
