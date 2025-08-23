@@ -194,6 +194,9 @@ let chronoEl=null, statusEl=null, logEl=null, dmCountEl=null;
     }catch(e){ console.error('[humanHover]', e); }
     await dwell(120,260);
   }
+    async function cooldown(min=600,max=1500){
+    await dwell(min,max);
+  }
 
   /* ---------- detectors ---------- */
   const isCompose  = ()=> IS_HFR ? /message\.php.*cat=prive/i.test(location.href) : /\/messages-prives\/nouveau\.php/i.test(location.pathname+location.search);
@@ -416,29 +419,45 @@ let sessionCache = {active:false,startTs:0,stopTs:0,mpCount:0,mpNextDelay:Math.f
   const TITLE_BL = [/mod[ée]ration/i, /r[èe]gles/i];
 
   /* ---------- forums + weighted choice ---------- */
-  const FORUMS = {
-    '51':      { name:'18-25',               list:'https://www.jeuxvideo.com/forums/0-51-0-1-0-1-0-blabla-18-25-ans.htm' },
-    '36':      { name:'Guerre des consoles', list:'https://www.jeuxvideo.com/forums/0-36-0-1-0-1-0-guerre-des-consoles.htm' },
-    '20':      { name:'Football',            list:'https://www.jeuxvideo.com/forums/0-20-0-1-0-1-0-football.htm' },
-    '3011927': { name:'Finance',             list:'https://www.jeuxvideo.com/forums/0-3011927-0-1-0-1-0-finance.htm' }
-  };
-  const ALLOWED_FORUMS = new Set(Object.keys(FORUMS));
-  const FORUM_WEIGHTS = [
-    { fid:'51', weight:0.80 },
-    { fid:'36', weight:0.10 },
-    { fid:'20', weight:0.05 },
-    { fid:'3011927', weight:0.05 }
-  ];
+  const FORUMS = {};
+  let ALLOWED_FORUMS = new Set();
+  async function loadForums(){
+    try{
+      const res = await fetch('https://forum.hardware.fr/hfr/');
+      const html = await res.text();
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const cats = doc.querySelectorAll('.catCase2');
+      let total = 0;
+      const tmp = [];
+      for(const cat of cats){
+        const link = cat.querySelector('a');
+        if(!link) continue;
+        const url = link.href;
+        const fidMatch = url.match(/hfr\/([^\/]+)/);
+        const fid = fidMatch ? fidMatch[1] : url;
+        const name = link.textContent.trim();
+        const nbTxt = cat.querySelector('.nb')?.textContent || '';
+        const messages = parseInt(nbTxt.replace(/[^\d]/g,''),10) || 0;
+        total += messages;
+        tmp.push({fid, name, list:url, messages});
+      }
+      for(const f of tmp){ FORUMS[f.fid] = {name:f.name, list:f.list, weight:0, messages:f.messages}; }
+      ALLOWED_FORUMS = new Set(Object.keys(FORUMS));
+      Object.values(FORUMS).forEach(f => { f.weight = total ? f.messages/total : 0; delete f.messages; });
+    }catch(e){ console.error('loadForums', e); }
+  }
+  await loadForums();
   function pickForumIdWeighted(){
     const r = Math.random();
     let cum = 0;
-    for(const {fid, weight} of FORUM_WEIGHTS){
-      cum += weight;
+    for(const fid in FORUMS){
+      const w = FORUMS[fid].weight;
+      cum += w;
       if(r < cum) return fid;
     }
-    return FORUM_WEIGHTS[0].fid;
+    return Object.keys(FORUMS)[0];
   }
-  function pickListWeighted(){ const fid=pickForumIdWeighted(); return FORUMS[fid].list; }
+  function pickListWeighted(){ const fid=pickForumIdWeighted(); return FORUMS[fid]?.list; }
 
   async function setTargetForum(fid){ await set(STORE_TARGET_FORUM, {fid, ts:NOW()}); }
   async function getTargetForum(){ const o=await get(STORE_TARGET_FORUM,null); if(!o) return null; if(NOW()-o.ts>10*60*1000){ await set(STORE_TARGET_FORUM,null); return null; } return o.fid||null; }
@@ -474,16 +493,28 @@ let sessionCache = {active:false,startTs:0,stopTs:0,mpCount:0,mpNextDelay:Math.f
   };
 
   function myPseudo(){
+  // Try to retrieve pseudo from Hardware.fr specific elements or cookies
   const selectors=[
     '.headerAccount__pseudo',
     '.account__pseudo',
-    'a.headerAccount__user'
+    'a.headerAccount__user',
+    'a.md_cryptlink[href*="profil"]'
   ];
   for(const sel of selectors){
-    const t=q(sel)?.textContent?.trim();
-    if(t) return t;
+    const el=q(sel);
+    const t=el?.textContent?.trim();
+    if(t){
+      if(sel.includes('md_cryptlink')){
+        const m=t.match(/profil\s+(.*)/i);
+        if(m && m[1]) return m[1].trim();
+      } else {
+        return t;
+      }
+    }
   }
-  const hasSession = document.cookie.includes('md_sid=');
+  const cookieMatch=document.cookie.match(/(?:^|; )md_user=([^;]+)/);
+  if(cookieMatch) return decodeURIComponent(cookieMatch[1]);
+  const hasSession=document.cookie.includes('md_user=') || q('a.md_cryptlink[href*="profil"]');
   log(`Pseudo introuvable${hasSession ? ' — session détectée' : ' — aucune session détectée'}.`);
   return '';
   }
@@ -736,6 +767,7 @@ let sessionCache = {active:false,startTs:0,stopTs:0,mpCount:0,mpNextDelay:Math.f
 
   async function handleCompose(cfg){
     await sleep(150+Math.random()*250);
+    await randomScrollWait(1200,2500);
 
     let pseudo =
       q('#destinataires .form-control-tag .label')?.childNodes?.[0]?.nodeValue?.trim() ||
@@ -754,8 +786,11 @@ let sessionCache = {active:false,startTs:0,stopTs:0,mpCount:0,mpNextDelay:Math.f
     if(zone){ await human(); setValue(zone,''); await typeMixed(zone, message||''); }
 
     await dwell(800,1400);
-    q('.btn.btn-poster-msg.js-post-message, button[type="submit"], input[type="submit"]')?.click();
+    const sendBtn=q('.btn.btn-poster-msg.js-post-message, button[type="submit"], input[type="submit"]');
+    if(sendBtn){ await humanHover(sendBtn); await cooldown(); sendBtn.click(); }
+    else { q('.btn.btn-poster-msg.js-post-message, button[type="submit"], input[type="submit"]')?.click(); }
     await sleep(1200);
+    await cooldown();
 
     if (isBannedError()){
       log('Recipient banned → back to list.');
@@ -895,22 +930,26 @@ let sessionCache = {active:false,startTs:0,stopTs:0,mpCount:0,mpNextDelay:Math.f
           const atLast = await ensureAtLastPage();
           if(!atLast){ tickSoon(400); return; }
           await randomScrollWait(2000,4000);
+          const lastMsg = q('.message:last-of-type');
+          if(lastMsg) await humanHover(lastMsg);
           const pseudo=await pickRandomEligiblePseudo(cfg, 6000);
           if(!pseudo){ log('No eligible user (cooldown/blacklist). Back to list.'); history.back(); return; }
 
           log(`Chosen random target → ${pseudo}`);
-          await dwell(400,1200);
+          await cooldown();
           const url=`${ORIG}/message.php?config=hfr.inc&cat=prive&dest=${encodeURIComponent(pseudo)}`;
           location.href=url; return;
         }
 
         if(isForumList()){
+          await randomScrollWait(1500,3000);
           await set(STORE_LAST_LIST, location.href);
           const links=collectTopicLinks();
           if(!links.length){ log('Forum list detected but no usable links.'); tickSoon(800); return; }
           const pick=randomPick(links);
           log(`Open topic → ${(pick.textContent||'').trim().slice(0,80)}`);
           await humanHover(pick);
+          await cooldown();
           pick.setAttribute('target','_self'); pick.click();
           return;
         }
@@ -1070,12 +1109,12 @@ let sessionCache = {active:false,startTs:0,stopTs:0,mpCount:0,mpNextDelay:Math.f
   })();
 
     async function startHandler(){
-    const c=Object.assign({}, DEFAULTS, await loadConf());
       const pseudo = myPseudo();
       if(!pseudo){
         log('Pseudo introuvable — démarrage annulé.');
         return;
       }
+      const c=Object.assign({}, DEFAULTS, await loadConf());
       c.me = pseudo;
     await saveConf(c);
     await set(STORE_ON,true);
