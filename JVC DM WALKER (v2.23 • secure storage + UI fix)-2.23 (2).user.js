@@ -802,7 +802,6 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
     if(!sessionCache.active || !sessionCache.startTs) sessionCache.startTs = NOW();
     sessionCache.active = true;
     sessionCache.stopTs = 0;
-    sessionCache.dmSent = 0;
     if(!wasActive) sessionCache.dmSent = 0;
     await set(STORE_SESSION, sessionCache);
     startTimerUpdater();
@@ -903,6 +902,7 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
           sessionCache.mpNextDelay = Math.floor(rnd(2,5));
         }
         await set(STORE_SESSION, sessionCache);
+        await updateSessionUI();
       }else{
         log(`Send failed / skipped${res.reason?` (${res.reason})`:''}.`);
       }
@@ -1130,26 +1130,18 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
     hoursWrap.append(hoursLabel,startInput,endInput);
     
     const chronoWrap=document.createElement('div');
-    Object.assign(chronoWrap.style,{display:'flex',justifyContent:'flex-start',alignItems:'center',marginBottom:'4px',fontVariantNumeric:'tabular-nums'});
-    const chronoInner=document.createElement('div');
-    chronoInner.textContent='⏱ ';
+    Object.assign(chronoWrap.style,{display:'flex',alignItems:'center',gap:'4px',marginBottom:'4px',fontVariantNumeric:'tabular-nums'});
+    const chronoLabel=document.createElement('span');
+    chronoLabel.textContent='⏱';
     const chrono=document.createElement('span');
     chrono.id='jvc-dmwalker-chrono';
     chrono.textContent='00:00:00';
     chronoEl=chrono;
-    chronoInner.appendChild(chrono);
-    chronoWrap.appendChild(chronoInner);
-
-    const dmWrap=document.createElement('div');
-    Object.assign(dmWrap.style,{display:'flex',justifyContent:'flex-start',alignItems:'center',marginBottom:'4px',fontVariantNumeric:'tabular-nums'});
-    const dmInner=document.createElement('div');
-    dmInner.textContent='DMs: ';
     const dmCount=document.createElement('span');
     dmCount.id='jvc-dmwalker-dmcount';
     dmCount.textContent='0';
     dmCountEl=dmCount;
-    dmInner.appendChild(dmCount);
-    dmWrap.appendChild(dmInner);
+    chronoWrap.append(chronoLabel, chrono, document.createTextNode(' | DMs: '), dmCount);
     
     const log=document.createElement('div');
     log.id='jvc-dmwalker-log';
@@ -1160,7 +1152,7 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
     });
     logEl=log;
 
-    box.append(header,actions,hoursWrap,chronoWrap,dmWrap,log);
+    box.append(header,actions,hoursWrap,chronoWrap,log);
 
     const parent=document.body||document.documentElement;
     parent.appendChild(box);
