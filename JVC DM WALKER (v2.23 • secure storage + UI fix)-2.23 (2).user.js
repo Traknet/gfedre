@@ -28,6 +28,8 @@
   const human=()=>sleep(Math.round(rnd(49,105)));
   const dwell=(a=350,b=950)=>sleep(Math.round(rnd(a,b)));
     async function randomScrollWait(min,max){
+    if (min >= max) [min, max] = [max, min];
+    min = Math.max(min, 0);
     const end = NOW() + Math.round(rnd(min,max));
     while(NOW() < end){
       if(Math.random()<0.3){
@@ -38,6 +40,8 @@
     }
   }
   async function randomScrollWait(min,max){
+  if (min >= max) [min, max] = [max, min];
+    min = Math.max(min, 0);
     const end = NOW() + Math.round(rnd(min,max));
     while(NOW() < end){
       if(Math.random()<0.3){
@@ -47,20 +51,14 @@
       await dwell(400,1200);
     }
   }
-   /**
+ /**
   * Attend une durée aléatoire entre `min` et `max` en simulant des scrolls.
-  * En cas de configuration incorrecte (`min >= max`), les valeurs sont permutées
-  * ou remplacées par des valeurs par défaut pour éviter les erreurs.
+  * Si `min >= max`, les valeurs sont permutées pour garantir un intervalle valide.
+  * Le paramètre `min` est borné à `0` pour éviter les valeurs négatives.
   */
  async function randomScrollWait(min,max){
-    // ensure a valid interval; if misconfigured swap or fallback to defaults
-    if(min >= max){
-      if(min > max) [min, max] = [max, min]; // swap if inverted
-      else { // min === max, use sane defaults
-        console.warn('[randomScrollWait] min and max equal; using defaults 2000-6000ms');
-        min = 2000; max = 6000;
-      }
-    }
+    if (min >= max) [min, max] = [max, min];
+    min = Math.max(min, 0);
     const end = NOW() + Math.round(rnd(min,max));
     while(NOW() < end){
       if(Math.random()<0.3){
@@ -566,12 +564,8 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
     const raw = sanitizeURLs(randomPick(TEXT_TEMPLATES) || '');
     const message = addTrailingSpaces(raw);
     if(!message.trim()){
-      console.warn('generateMessage: empty message, aborting send');
-      if(typeof alert === 'function'){
-        alert('Veuillez remplir au moins un template de message.');
-      }
-      return null;
-    }    return { subject, message };
+    }
+    return { subject, message };
   }
   function buildPersonalizedMessage(pseudo){
     const generated = generateMessage();
@@ -750,7 +744,10 @@ C’est gratos et t’encaisses par virement ou paypal https://image.noelshack.c
       (qa('#destinataires input[name^="participants["]').map(i=>i.value)[0]??'') || '';
 
     const generated = buildPersonalizedMessage(pseudo);
-    if(!generated){ return; }
+    if(!generated){
+      log('Empty message generated → skipping send.');
+      return { ok:false, reason:'empty message' };
+    }
     const { subject, message } = generated;
     
     const titre = q('#conv_titre, input[name="conv_titre"], input[placeholder*="sujet" i]');
